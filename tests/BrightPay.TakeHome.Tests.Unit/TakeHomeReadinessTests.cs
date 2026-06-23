@@ -7,10 +7,10 @@ namespace BrightPay.TakeHome.Tests.Unit;
 public sealed class TakeHomeReadinessTests
 {
     [Fact]
-    public void ItemsTrackAtLeastOnePendingSpecEntry()
+    public void ItemsTrackLoadedSpecEntry()
     {
         TakeHomeReadiness.Items
-            .ShouldContain(static item => item.Status == ReadinessStatus.PendingSpec);
+            .ShouldContain(static item => item.Status == ReadinessStatus.SpecLoaded);
     }
 
     [Fact]

@@ -15,6 +15,6 @@ public sealed class HomePageTests : BunitContext
 
         component.Find("h1").TextContent.ShouldBe("BrightPay take-home");
         component.Markup.ShouldContain("Current State");
-        component.Markup.ShouldContain("Pending spec");
+        component.Markup.ShouldContain("Spec loaded");
     }
 }

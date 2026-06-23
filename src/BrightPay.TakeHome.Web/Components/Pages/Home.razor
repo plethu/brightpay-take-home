@@ -29,7 +29,7 @@
 <section class="panel" aria-labelledby="readiness-title">
     <div class="section-heading">
         <h2 id="readiness-title">Current State</h2>
-        <p>Keep this screen only until the official product spec arrives.</p>
+        <p>Replace this readiness screen with the checkout workflow from docs/SPEC.md.</p>
     </div>
 
     <ul class="readiness-list">
@@ -51,16 +51,16 @@
 <section class="next-step" aria-labelledby="next-step-title">
     <h2 id="next-step-title">Next Slice</h2>
     <p>
-        When the spec lands, replace the placeholder readiness model and page
-        with the smallest complete workflow that demonstrates accessible Blazor
-        UI, testable business rules, and clear validation states.
+        Build the smallest complete checkout path first: configurable pricing
+        rules, item scanning in any order, repeatable offers, accessible Blazor
+        UI, and no-JS form behavior.
     </p>
 </section>
 
 @code {
     private static string StatusClass(ReadinessStatus status) =>
-        status == ReadinessStatus.Ready ? "status-ready" : "status-pending";
+        status == ReadinessStatus.Ready ? "status-ready" : "status-spec";
 
     private static string StatusLabel(ReadinessStatus status) =>
-        status == ReadinessStatus.Ready ? "Ready" : "Pending spec";
+        status == ReadinessStatus.Ready ? "Ready" : "Spec loaded";
 }

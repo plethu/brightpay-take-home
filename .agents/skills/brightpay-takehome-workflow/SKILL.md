@@ -7,9 +7,8 @@ description: Plan and deliver BrightPay take-home interview work in this reposit
 
 ## Workflow
 
-1. Re-read the live spec, `AGENTS.md`, and relevant project files before
-   deciding scope. If the official spec is absent, work only on reversible
-   scaffold, quality gates, and clearly labelled assumptions.
+1. Re-read `docs/SPEC.md`, `AGENTS.md`, and relevant project files before
+   deciding scope.
 2. Keep changes PR-sized and explain why each tool, dependency, or abstraction
    helps the expected product rather than showing off.
 3. Prefer boring .NET conventions first: Blazor Web App, typed domain/service
@@ -18,8 +17,8 @@ description: Plan and deliver BrightPay take-home interview work in this reposit
 4. Leave evidence of considered AI usage in durable artifacts: commit messages,
    short decision records, test coverage, review notes, and readable agent
    skills. Do not add performative AI prose to the product UI.
-5. When the spec arrives, replace placeholder/sample UI with the requested
-   workflow immediately. Keep only scaffold that still serves the spec.
+5. Replace placeholder/sample UI with the checkout workflow immediately. Keep
+   only scaffold that serves `docs/SPEC.md`.
 
 ## Scope Decisions
 

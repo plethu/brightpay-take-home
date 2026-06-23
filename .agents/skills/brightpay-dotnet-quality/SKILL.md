@@ -32,14 +32,18 @@ description: Build or review C#/.NET code in this BrightPay take-home repository
 - Keep transport DTOs and view models at the Web boundary, mapped from domain
   types; do not expose domain entities directly or let DTO shapes drive the
   domain model.
-- Use `async` only at I/O boundaries. Do not add background work, queues, or
-  hosted services until the spec requires them.
+- Use `async` only at I/O boundaries.
+- Evaluate command/query handlers, dispatch boundaries, pipelines or
+  chain-of-responsibility flows, projectors, caching, and domain events only
+  when the workflow complexity warrants them. Treat these as review prompts, not
+  defaults.
 
 ## Dependency Bias
 
 Add dependencies only when they remove real complexity and fit a take-home
 review. Keep speculative packages in docs until verified and needed. When a
-capability is justified, use:
+capability is justified, prefer ecosystem-aligned .NET primitives and packages
+that ease migration, testability, and reviewer understanding. Use:
 
 - FluentValidation (the core package, not the AspNetCore adapter) for
   non-trivial input validation; call validators explicitly from handlers.
@@ -68,6 +72,7 @@ current package metadata before pinning new versions.
   frontend invalidation?
 - Do tests cover the behavior that would matter to a reviewer?
 - Are generated/sample files removed once the real spec is implemented?
+- Does any file carry multiple concerns that should be split by responsibility?
 
 ## Verification
 

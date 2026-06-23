@@ -10,16 +10,16 @@ public static class TakeHomeReadiness
             ReadinessStatus.Ready),
         new(
             "Application shell",
-            "Blazor Web App is ready for the take-home workflow once the spec arrives.",
+            "Blazor Web App is configured for server rendering with targeted client interactivity.",
             ReadinessStatus.Ready),
         new(
             "Domain model",
-            "Core project exists so business rules can stay separate from Razor components.",
+            "Core project is ready for checkout pricing rules and transaction state separate from Razor components.",
             ReadinessStatus.Ready),
         new(
             "Product requirements",
-            "Replace this readiness screen with the requested workflow when BrightPay sends the spec.",
-            ReadinessStatus.PendingSpec),
+            "docs/SPEC.md defines the checkout kata: configurable pricing rules, item scanning, and repeatable offers.",
+            ReadinessStatus.SpecLoaded),
     ];
 
     public static int ReadyCount => Items.Count(static item => item.Status == ReadinessStatus.Ready);
