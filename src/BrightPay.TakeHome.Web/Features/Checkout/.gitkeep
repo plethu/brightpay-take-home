@@ -1,0 +1,4 @@
+Checkout vertical slice (non-UI): application services that orchestrate the
+domain over the DbContext, view-model mapping (Riok.Mapperly), and minimal-API
+endpoint mapping for the no-JS progressive-enhancement path. UI components for this
+feature live under Components/Checkout/.

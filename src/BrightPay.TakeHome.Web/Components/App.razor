@@ -1,20 +1,46 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IStringLocalizer<SharedResource> Localizer
+
+<!DOCTYPE html>
+<html lang="@Language" dir="@Direction" data-theme="@Theme">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["BrightPay.TakeHome.Web.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <title>@Localizer["AppName"]</title>
     <HeadOutlet />
 </head>
 
 <body>
+    <a class="skip-link" href="#main-content">@Localizer["ShellSkipToContent"]</a>
     <Routes />
 </body>
 
 </html>
+
+@code {
+    // Allowed theme values, keyed off [data-theme] in app.css. Default is the first entry.
+    private static readonly string[] Themes = ["light", "dark"];
+
+    private static string Language => CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+
+    private static string Direction => CultureInfo.CurrentCulture.TextInfo.IsRightToLeft ? "rtl" : "ltr";
+
+    // Resolved server-side from the theme cookie so the initial render matches the
+    // user's choice with no flash of the wrong theme.
+    private string Theme
+    {
+        get
+        {
+            string? cookie = HttpContextAccessor.HttpContext?.Request.Cookies["theme"];
+            return cookie is not null && Themes.Contains(cookie, StringComparer.Ordinal)
+                ? cookie
+                : Themes[0];
+        }
+    }
+}

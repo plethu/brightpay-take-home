@@ -1,0 +1,3 @@
+Checkout feature UI: reusable Razor components composed by the checkout page(s)
+— e.g. CartLine, ProductCatalog, OfferBadge, CartSummary. Routable pages can also
+be nested by feature; app-level pages (Home/Error/NotFound) stay in Components/Pages.
