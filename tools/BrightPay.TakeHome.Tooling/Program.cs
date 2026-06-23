@@ -14,21 +14,29 @@ return command switch
 static int CheckToolchain()
 {
     string root = FindRepositoryRoot();
-    string misePath = Path.Combine(root, ".mise.toml");
-    string globalJsonPath = Path.Combine(root, "global.json");
+    ToolchainVersionPin[] dotnetSdkPins =
+    [
+        new(".mise.toml", ReadMiseDotnetVersion(Path.Combine(root, ".mise.toml"))),
+        new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
+        new("Dockerfile.e2e", ReadDockerfileE2EDotnetSdkVersion(Path.Combine(root, "Dockerfile.e2e"))),
+    ];
 
-    string miseDotnet = ReadMiseDotnetVersion(misePath);
-    string globalJsonDotnet = ReadGlobalJsonDotnetVersion(globalJsonPath);
+    string expectedDotnetSdkVersion = dotnetSdkPins[0].Version;
 
-    if (!StringComparer.Ordinal.Equals(miseDotnet, globalJsonDotnet))
+    if (dotnetSdkPins.Any(pin => !StringComparer.Ordinal.Equals(pin.Version, expectedDotnetSdkVersion)))
     {
-        Console.Error.WriteLine(
-            $".NET SDK version mismatch: .mise.toml pins {miseDotnet}, but global.json pins {globalJsonDotnet}."
-        );
+        Console.Error.WriteLine(".NET SDK version mismatch:");
+        foreach (ToolchainVersionPin pin in dotnetSdkPins)
+        {
+            Console.Error.WriteLine($"  {pin.Source}: {pin.Version}");
+        }
+
         return 1;
     }
 
-    Console.WriteLine($".NET SDK pin OK: {globalJsonDotnet}");
+    Console.WriteLine(
+        $".NET SDK pin OK: {expectedDotnetSdkVersion} ({string.Join(", ", dotnetSdkPins.Select(pin => pin.Source))})"
+    );
     return 0;
 }
 
@@ -77,4 +85,14 @@ static string ReadGlobalJsonDotnetVersion(string path)
         && version.GetString() is { Length: > 0 } value
         ? value
         : throw new InvalidOperationException($"Could not find sdk.version in {path}.");
+}
+
+static string ReadDockerfileE2EDotnetSdkVersion(string path)
+{
+    string text = File.ReadAllText(path);
+    Match match = ToolingRegexes.DockerfileE2EDotnetSdkVersionRegex.Match(text);
+
+    return match.Success
+        ? match.Groups["version"].Value.Trim('"', '\'')
+        : throw new InvalidOperationException($"Could not find ARG DOTNET_SDK_VERSION in {path}.");
 }
