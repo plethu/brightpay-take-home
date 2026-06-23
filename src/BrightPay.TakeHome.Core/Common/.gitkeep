@@ -1,0 +1,3 @@
+Shared kernel: domain primitives reused across more than one feature (e.g. a
+Result/Error type, base value-object helpers). Promote here only when something is
+genuinely shared — a single feature keeps its types in its own folder.

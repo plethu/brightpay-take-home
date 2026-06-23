@@ -1,0 +1,4 @@
+Domain bounded context for checkout. Entities, value objects (Sku, Money), the
+CheckoutCart aggregate, Offer/pricing rules, and any checkout domain services live
+here. Core stays free of EF Core, Razor, and ASP.NET hosting types — dependencies
+point inward.
