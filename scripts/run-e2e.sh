@@ -2,13 +2,18 @@
 set -euo pipefail
 
 url="${E2E_BASE_URL:-http://127.0.0.1:5087}"
+export DisableHttpsRedirection="${DisableHttpsRedirection:-true}"
 
-dotnet run \
-    --project src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj \
-    --configuration Release \
-    --no-build \
-    --no-launch-profile \
-    --urls "$url" &
+if [[ -n "${E2E_APP_DLL:-}" ]]; then
+    dotnet "$E2E_APP_DLL" --urls "$url" &
+else
+    dotnet run \
+        --project src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj \
+        --configuration Release \
+        --no-build \
+        --no-launch-profile \
+        --urls "$url" &
+fi
 server_pid="$!"
 
 cleanup() {
