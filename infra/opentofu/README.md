@@ -15,7 +15,9 @@ just infra-fmt        # check formatting
 just infra-validate   # tofu init -backend=false + validate, no Azure credentials needed
 ```
 
-`tofu plan` and `tofu apply` need Azure authentication and a container image:
+`tofu plan` and `tofu apply` need Azure authentication and a container image.
+The `release` workflow publishes the image to GHCR on a `v*` tag; point
+`container_image` at that tag.
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars   # set container_image

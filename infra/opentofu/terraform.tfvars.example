@@ -1,4 +1,5 @@
-container_image = "ghcr.io/your-user/brightpay-takehome:latest"
+# Published by the release workflow on a v* tag. Pin a version, do not use latest.
+container_image = "ghcr.io/plethu/brightpay-take-home:0.1.0"
 
 # Optional overrides:
 # subscription_id      = "00000000-0000-0000-0000-000000000000"
