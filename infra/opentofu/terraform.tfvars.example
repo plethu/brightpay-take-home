@@ -6,6 +6,7 @@ container_image = "ghcr.io/your-user/brightpay-takehome:latest"
 # environment          = "demo"
 # location             = "uksouth"
 # enable_log_analytics = false
+# sql_admin_login      = "brightpayadmin"
 # tags = {
 #   owner = "your-name"
 # }

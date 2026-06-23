@@ -44,6 +44,17 @@ variable "enable_log_analytics" {
   default     = false
 }
 
+variable "sql_admin_login" {
+  description = "Administrator login for the Azure SQL server. The password is generated and stored in state."
+  type        = string
+  default     = "brightpayadmin"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9]{2,15}$", var.sql_admin_login))
+    error_message = "Use 3-16 lowercase letters or numbers, starting with a letter."
+  }
+}
+
 variable "tags" {
   description = "Additional Azure tags."
   type        = map(string)

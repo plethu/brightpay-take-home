@@ -1,33 +1,44 @@
 # OpenTofu Azure Deployment
 
-This directory contains an optional Azure Container Apps target for a published
-container image. Container Apps is a better fit for the current Blazor Web App
-shape than Static Web Apps because the app is server-hosted.
+Optional Azure target for the take-home: a published container image on Azure
+Container Apps, backed by Azure SQL. Not required to run or review the app
+locally.
 
-Static Web Apps remains the cheaper fallback if the spec can be delivered as a
-static Blazor WebAssembly app plus serverless APIs.
+It provisions a resource group, a Container Apps environment and app, and a
+serverless Azure SQL database. The database connection string is generated and
+injected into the container as a secret.
 
 ## Commands
 
 ```bash
-just infra-fmt
-just infra-validate
+just infra-fmt        # check formatting
+just infra-validate   # tofu init -backend=false + validate, no Azure credentials needed
 ```
 
-`just infra-validate` runs `tofu init -backend=false` and does not require Azure
-credentials. `tofu plan` and `tofu apply` require Azure authentication and a
-container image value:
+`tofu plan` and `tofu apply` need Azure authentication and a container image:
 
 ```bash
-cp terraform.tfvars.example terraform.tfvars
+cp terraform.tfvars.example terraform.tfvars   # set container_image
 tofu -chdir=infra/opentofu plan
 ```
 
-Do not commit `terraform.tfvars`, state files, plans, or cloud credentials.
+Do not commit `terraform.tfvars`, state files, plans, or credentials. State
+holds the generated SQL password.
 
-## Cost Notes
+## Cost
 
-The default shape is intentionally small: one resource group, one Container Apps
-environment, and one container app with `min_replicas = 0` and `max_replicas =
-1`. Log Analytics is disabled by default to keep the scaffold cost-conscious;
-turn it on only if deployment diagnostics matter for the submitted demo.
+Built to cost near nothing while idle:
+
+- Container app scales to zero (`min_replicas = 0`, `max_replicas = 1`, 0.25
+  vCPU / 0.5 GiB).
+- SQL uses the serverless tier and auto-pauses after 60 minutes, so an unused
+  demo pays for storage only. The first request after a pause waits for the
+  database to resume.
+- Log Analytics is off by default. Turn it on only if deployment diagnostics
+  matter for the submitted demo.
+
+## Security note
+
+The SQL firewall uses Azure's "allow Azure services" rule so the container can
+reach the database without fixed egress IPs. That is fine for a demo. Anything
+real wants a VNet with a private endpoint.
