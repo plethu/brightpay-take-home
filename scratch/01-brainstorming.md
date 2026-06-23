@@ -127,6 +127,7 @@ Concerns:
     * Show applied `Offer`s and calculated price from the `OffersService` or whatever it ends up being called
     * Can adjust quantities and remove items, which will re-calculate `Offer`s
     * Checkout button must be disabled if no `Product`s in `Cart`
+    * Ability to "scan" (i.e. input by text in this scenario probably) items in by their SKUs and add them to the cart
   * Maybe:
     * "Continue shopping" button to redirect to `/browse`
 * Checkout (`/cart/checkout`)
@@ -150,4 +151,6 @@ Concerns:
   * If so, standardised DTO mappings with versioned API entities.
   * OpenAPI autogen.
 
+## Scope
 
+Way over-scoped, intent for 02 is to trim this down and organise this into deliverable milestones, cut whatever isn't MVP, etc.
