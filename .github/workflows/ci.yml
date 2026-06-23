@@ -53,11 +53,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
 
-      - name: Build E2E image
-        run: docker build -f Dockerfile.e2e -t brightpay-takehome-e2e:ci .
+      - name: Start SQL Server
+        run: docker compose up --detach db
 
       - name: Run E2E smoke tests
-        run: docker run --rm brightpay-takehome-e2e:ci
+        run: docker compose run --rm e2e
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes
 
   infra:
     runs-on: ubuntu-latest
