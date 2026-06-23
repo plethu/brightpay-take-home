@@ -6,7 +6,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- CA1515 only fires on exe projects and flags the public types DI, EF Core, and
+         Razor require in the Web app. AnalysisLevel=latest makes it surface inconsistently
+         across SDK builds (e.g. the MCR container image), so suppress it deterministically. -->
+    <NoWarn>$(NoWarn);CS1591;CA1515</NoWarn>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

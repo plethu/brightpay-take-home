@@ -13,7 +13,7 @@ services:
       - sql-data:/var/opt/mssql
 
   web:
-    image: ${DOTNET_SDK_IMAGE:-mcr.microsoft.com/dotnet/sdk:10.0.204}
+    image: ${DOTNET_SDK_IMAGE:-mcr.microsoft.com/dotnet/sdk:10.0.203}
     container_name: ${DEV_CONTAINER_NAME:-brightpay-takehome-web}
     depends_on:
       - db
