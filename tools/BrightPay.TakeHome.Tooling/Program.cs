@@ -8,6 +8,7 @@ string command = args.Length > 0 ? args[0] : "help";
 return command switch
 {
     "check-toolchain" => CheckToolchain(),
+    "dev-dashboard" => DevDashboard(),
     _ => Usage(),
 };
 
@@ -41,10 +42,89 @@ static int CheckToolchain()
     return 0;
 }
 
+static int DevDashboard()
+{
+    string appPort = Environment.GetEnvironmentVariable("APP_HOST_PORT") ?? "8080";
+    string sqlPort = Environment.GetEnvironmentVariable("SQL_HOST_PORT") ?? "14333";
+    string webContainer = Environment.GetEnvironmentVariable("DEV_CONTAINER_NAME") ?? "brightpay-takehome-web";
+    string dbContainer = Environment.GetEnvironmentVariable("DB_CONTAINER_NAME") ?? "brightpay-takehome-db";
+    string baseUrl = $"http://localhost:{appPort}";
+    string cartUrl = $"{baseUrl}/cart";
+
+    if (!WaitForApp(cartUrl).GetAwaiter().GetResult())
+    {
+        Console.Error.WriteLine($"Timed out waiting for {cartUrl}.");
+        Console.Error.WriteLine("Run `just logs` to inspect the web container.");
+        return 1;
+    }
+
+    ClearConsole();
+
+    Console.WriteLine("BrightPay Take-Home is running");
+    Console.WriteLine();
+    Console.WriteLine("App");
+    Console.WriteLine($"  Cart:       {cartUrl}");
+    Console.WriteLine($"  Home:       {baseUrl}/");
+    Console.WriteLine();
+    Console.WriteLine("Services");
+    Console.WriteLine($"  Web:        {webContainer}");
+    Console.WriteLine($"  SQL Server: 127.0.0.1:{sqlPort} ({dbContainer})");
+    Console.WriteLine();
+    Console.WriteLine("Development commands");
+    Console.WriteLine("  just logs       follow web logs");
+    Console.WriteLine("  just shell-web  open a shell in the web container");
+    Console.WriteLine("  just shell-db   open a shell in the SQL Server container");
+    Console.WriteLine("  just db-update  apply EF Core migrations");
+    Console.WriteLine("  just ps         show container status");
+    Console.WriteLine("  just down       stop containers");
+
+    return 0;
+}
+
 static int Usage()
 {
-    Console.Error.WriteLine("Usage: dotnet run --project tools/BrightPay.TakeHome.Tooling -- check-toolchain");
+    Console.Error.WriteLine("Usage: dotnet run --project tools/BrightPay.TakeHome.Tooling -- <check-toolchain|dev-dashboard>");
     return 64;
+}
+
+static async Task<bool> WaitForApp(string url)
+{
+    using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(2) };
+    DateTimeOffset deadline = DateTimeOffset.UtcNow.AddSeconds(90);
+
+    while (DateTimeOffset.UtcNow < deadline)
+    {
+        try
+        {
+            using HttpResponseMessage response = await client.GetAsync(new Uri(url)).ConfigureAwait(false);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (TaskCanceledException)
+        {
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+    }
+
+    return false;
+}
+
+static void ClearConsole()
+{
+    try
+    {
+        Console.Clear();
+    }
+    catch (IOException)
+    {
+        Console.WriteLine();
+    }
 }
 
 static string FindRepositoryRoot()

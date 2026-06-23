@@ -1,38 +1,27 @@
 # BrightPay Take-Home
 
-.NET 10 Blazor Web App scaffold for an expected BrightPay take-home exercise.
-The official product spec is not in the repo yet, so the current app is a
-readiness screen plus quality gates.
+.NET 10 Blazor checkout app for the BrightPay take-home exercise.
 
-## Quick Start
+## Prerequisites
+
+- [`mise`](https://mise.jdx.dev/getting-started.html) for the pinned .NET SDK,
+  `just`, and OpenTofu versions.
+- [Podman](https://podman.io/docs/installation) with `podman-compose`, or
+  [Docker](https://docs.docker.com/get-started/get-docker/) with Docker
+  Compose.
+
+## Usage
 
 ```bash
+git clone <repo-url>
+cd take-home
+mise trust
 mise install
 cp .env.example .env
-just check-host
+just up
 ```
 
-Use `just up` for the containerized dev app, or `just run` for host `dotnet
-watch`.
+`just up` starts SQL Server and the Blazor app, clears the terminal, and prints
+the local links and runtime commands for the development session.
 
-## Documentation
-
-- [Setup](docs/setup.md)
-- [Commands](docs/commands.md)
-- [Dependency notes](docs/dependencies.md)
-- [Azure OpenTofu deployment](infra/opentofu/README.md)
-
-## Tooling
-
-- .NET 10.0.301 via `mise` and `global.json`
-- `just` task runner, with `make` as an optional Unix shim
-- Podman-first container defaults, Docker-compatible overrides
-- Central NuGet versions in `Directory.Packages.props`
-- GitHub Actions in `.github/workflows/ci.yml`
-- Containerized Playwright E2E checks
-- Repo-local agent skills in `.agents/skills`
-
-## Agent Skills
-
-Codex discovers skills from `SKILL.md` YAML frontmatter. Each repo skill also
-has `agents/openai.yaml` metadata for OpenAI UI surfaces.
+Run `just` to list the available commands.
