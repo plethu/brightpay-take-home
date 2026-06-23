@@ -22,7 +22,7 @@ cleanup() {
 trap cleanup EXIT
 
 for _ in {1..60}; do
-    if curl --fail --silent --show-error "$url" | grep -q "BrightPay take-home"; then
+    if curl --fail --silent --show-error "$url/cart" | grep -q "Product A"; then
         echo "Running E2E smoke tests against $url"
         results_dir="/tmp/brightpay-e2e-results"
         rm -rf "$results_dir"

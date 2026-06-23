@@ -25,3 +25,9 @@ libraries until the official take-home spec justifies them.
 Already pinned for quality gates:
 
 - Meziantou.Analyzer and Roslynator.Analyzers for additional Roslyn coverage.
+
+Pinned for the D1 checkout foundation:
+
+- NodaMoney for currency-aware money values instead of custom money arithmetic.
+- Microsoft.EntityFrameworkCore.SqlServer and Microsoft.EntityFrameworkCore.Design
+  for the SQL Server-backed Product and Offer catalogue.

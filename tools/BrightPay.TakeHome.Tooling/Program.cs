@@ -18,7 +18,8 @@ static int CheckToolchain()
     [
         new(".mise.toml", ReadMiseDotnetVersion(Path.Combine(root, ".mise.toml"))),
         new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
-        new("Dockerfile.e2e", ReadDockerfileE2EDotnetSdkVersion(Path.Combine(root, "Dockerfile.e2e"))),
+        new("compose.yaml SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, "compose.yaml"))),
+        new(".env.example SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, ".env.example"))),
     ];
 
     string expectedDotnetSdkVersion = dotnetSdkPins[0].Version;
@@ -87,12 +88,12 @@ static string ReadGlobalJsonDotnetVersion(string path)
         : throw new InvalidOperationException($"Could not find sdk.version in {path}.");
 }
 
-static string ReadDockerfileE2EDotnetSdkVersion(string path)
+static string ReadDotnetSdkImageVersion(string path)
 {
     string text = File.ReadAllText(path);
-    Match match = ToolingRegexes.DockerfileE2EDotnetSdkVersionRegex.Match(text);
+    Match match = ToolingRegexes.DotnetSdkImageVersionRegex.Match(text);
 
     return match.Success
-        ? match.Groups["version"].Value.Trim('"', '\'')
-        : throw new InvalidOperationException($"Could not find ARG DOTNET_SDK_VERSION in {path}.");
+        ? match.Groups["version"].Value
+        : throw new InvalidOperationException($"Could not find a pinned .NET SDK image in {path}.");
 }

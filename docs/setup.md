@@ -8,7 +8,8 @@ normal .NET workflow.
 
 - [`mise`](https://mise.jdx.dev/installing-mise.html) for installing the
   pinned SDK and task runner.
-- Podman or Docker for containerized app and E2E workflows:
+- Podman plus `podman-compose`, or Docker with Docker Compose, for
+  containerized app and E2E workflows:
   [Podman installation](https://podman.io/docs/installation) or
   [Get Docker](https://docs.docker.com/get-started/get-docker/).
 - OpenTofu for optional infrastructure checks. It is pinned in `.mise.toml`;
@@ -38,9 +39,35 @@ just check-host
 On Windows, create `.env` by copying `.env.example` in Explorer, PowerShell, or
 your editor if `cp` is unavailable.
 
+The checkout workflow is served at `/cart`. The hosted app requires SQL Server;
+`just up` and `just run` both start the configured SQL Server service and run
+the web app in the .NET SDK container through `compose.yaml`.
+
+## SQL Server Catalogue
+
+The app includes EF Core SQL Server models and migrations for Products and
+Offers. The default local container settings are:
+
+```dotenv
+SQL_SERVER_IMAGE=mcr.microsoft.com/mssql/server:2022-latest
+SQL_HOST_PORT=14333
+ConnectionStrings__CheckoutDatabase="Server=127.0.0.1,14333;Database=BrightPayTakeHome;User Id=sa;Password=BrightPay_takehome_Passw0rd!;TrustServerCertificate=True"
+```
+
+`just up` starts the Compose services and the app applies migrations at startup.
+`just db-update` is available when applying migrations manually; it reads
+`ConnectionStrings__CheckoutDatabase` from `.env` or the shell. Cart contents are
+session workflow state and are not stored in the database in D1.
+
 ## Container Runtime
 
-Podman is the repo default:
+Podman is the repo default. On Arch, install both packages:
+
+```bash
+sudo pacman -S podman podman-compose
+```
+
+The default runtime setting is:
 
 ```dotenv
 CONTAINER_RUNTIME=podman
@@ -64,8 +91,8 @@ the shell has not activated mise shims. If you installed OpenTofu directly, set
 ## Platform Notes
 
 - The host path uses `dotnet` and `just`, not Bash-only scripts.
-- `just up` runs `dotnet watch` inside the .NET SDK container using the selected
-  container runtime directly.
+- `just up` runs `dotnet watch` inside the .NET SDK container using Compose and
+  the selected container runtime.
 - `just test-e2e` runs Playwright in the dedicated Linux container image.
 - `just infra-validate` checks OpenTofu syntax and provider configuration
   without provisioning Azure resources.

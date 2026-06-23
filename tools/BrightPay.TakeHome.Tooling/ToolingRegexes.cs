@@ -7,6 +7,6 @@ internal static partial class ToolingRegexes
     [GeneratedRegex(@"(?m)^\s*dotnet\s*=\s*[""'](?<version>[^""']+)[""']\s*$", RegexOptions.None, 1_000)]
     public static partial Regex MiseDotnetPinRegex { get; }
 
-    [GeneratedRegex(@"(?m)^\s*ARG\s+DOTNET_SDK_VERSION\s*=\s*(?<version>[^\s#]+)\s*$", RegexOptions.None, 1_000)]
-    public static partial Regex DockerfileE2EDotnetSdkVersionRegex { get; }
+    [GeneratedRegex(@"mcr\.microsoft\.com/dotnet/sdk:(?<version>\d+\.\d+\.\d+)", RegexOptions.None, 1_000)]
+    public static partial Regex DotnetSdkImageVersionRegex { get; }
 }

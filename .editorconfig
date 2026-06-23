@@ -66,3 +66,6 @@ dotnet_diagnostic.CA1001.severity = none
 dotnet_diagnostic.CA1031.severity = warning
 dotnet_diagnostic.CA1303.severity = none
 dotnet_diagnostic.CA1515.severity = none
+
+[src/BrightPay.TakeHome.Web/Data/Migrations/*.cs]
+generated_code = true
