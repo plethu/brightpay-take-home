@@ -115,6 +115,11 @@ resource "azurerm_container_app" "web" {
     target_port      = 8080
     transport        = "auto"
 
+    # Blazor Interactive Server circuits are pinned to one replica, so this is
+    # only safe at max_replicas = 1 (below). Scaling out needs ingress session
+    # affinity, which the azurerm provider does not expose yet; set it via AzAPI
+    # or `az containerapp ingress sticky-sessions set --affinity sticky` first.
+
     traffic_weight {
       latest_revision = true
       percentage      = 100
@@ -123,7 +128,7 @@ resource "azurerm_container_app" "web" {
 
   template {
     min_replicas = 0
-    max_replicas = 1
+    max_replicas = 1 # keep at 1 until ingress session affinity is set (see ingress note)
 
     container {
       name   = "web"
