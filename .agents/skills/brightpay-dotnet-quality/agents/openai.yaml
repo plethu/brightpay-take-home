@@ -1,0 +1,4 @@
+interface:
+  display_name: "BrightPay .NET Quality"
+  short_description: "Keep C# boundaries typed and testable"
+  default_prompt: "Use $brightpay-dotnet-quality to review the C# architecture and tests for this take-home app."

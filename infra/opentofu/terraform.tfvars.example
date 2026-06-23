@@ -1,0 +1,11 @@
+container_image = "ghcr.io/your-user/brightpay-takehome:latest"
+
+# Optional overrides:
+# subscription_id      = "00000000-0000-0000-0000-000000000000"
+# name_prefix          = "brightpay-th"
+# environment          = "demo"
+# location             = "uksouth"
+# enable_log_analytics = false
+# tags = {
+#   owner = "your-name"
+# }

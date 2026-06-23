@@ -1,0 +1,66 @@
+@page "/"
+@using BrightPay.TakeHome.Core
+
+<PageTitle>BrightPay take-home</PageTitle>
+
+<section class="hero" aria-labelledby="page-title">
+    <div>
+        <p class="eyebrow">Interview scaffold</p>
+        <h1 id="page-title">BrightPay take-home</h1>
+        <p class="summary">
+            A .NET 10 Blazor Web App scaffolded for a front-end leaning
+            take-home: typed domain boundary, test layers, local automation,
+            container files, CI, and agent workflow guidance.
+        </p>
+    </div>
+
+    <dl class="readiness-metrics" aria-label="Readiness summary">
+        <div>
+            <dt>@TakeHomeReadiness.ReadyCount</dt>
+            <dd>ready layers</dd>
+        </div>
+        <div>
+            <dt>@TakeHomeReadiness.Items.Count</dt>
+            <dd>tracked setup items</dd>
+        </div>
+    </dl>
+</section>
+
+<section class="panel" aria-labelledby="readiness-title">
+    <div class="section-heading">
+        <h2 id="readiness-title">Current State</h2>
+        <p>Keep this screen only until the official product spec arrives.</p>
+    </div>
+
+    <ul class="readiness-list">
+        @foreach (ReadinessItem item in TakeHomeReadiness.Items)
+        {
+            <li>
+                <span class="status @StatusClass(item.Status)">
+                    @StatusLabel(item.Status)
+                </span>
+                <div>
+                    <h3>@item.Title</h3>
+                    <p>@item.Detail</p>
+                </div>
+            </li>
+        }
+    </ul>
+</section>
+
+<section class="next-step" aria-labelledby="next-step-title">
+    <h2 id="next-step-title">Next Slice</h2>
+    <p>
+        When the spec lands, replace the placeholder readiness model and page
+        with the smallest complete workflow that demonstrates accessible Blazor
+        UI, testable business rules, and clear validation states.
+    </p>
+</section>
+
+@code {
+    private static string StatusClass(ReadinessStatus status) =>
+        status == ReadinessStatus.Ready ? "status-ready" : "status-pending";
+
+    private static string StatusLabel(ReadinessStatus status) =>
+        status == ReadinessStatus.Ready ? "Ready" : "Pending spec";
+}

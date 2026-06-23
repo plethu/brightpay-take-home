@@ -1,0 +1,4 @@
+interface:
+  display_name: "BrightPay Blazor Frontend"
+  short_description: "Build accessible Blazor front-end workflows"
+  default_prompt: "Use $brightpay-blazor-frontend to build or review a Blazor UI workflow for this take-home app."

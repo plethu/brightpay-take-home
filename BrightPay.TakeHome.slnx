@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BrightPay.TakeHome.Core/BrightPay.TakeHome.Core.csproj" />
+    <Project Path="src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BrightPay.TakeHome.Tests.Components/BrightPay.TakeHome.Tests.Components.csproj" />
+    <Project Path="tests/BrightPay.TakeHome.Tests.E2E/BrightPay.TakeHome.Tests.E2E.csproj" />
+    <Project Path="tests/BrightPay.TakeHome.Tests.Unit/BrightPay.TakeHome.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/BrightPay.TakeHome.Tooling/BrightPay.TakeHome.Tooling.csproj" />
+  </Folder>
+</Solution>

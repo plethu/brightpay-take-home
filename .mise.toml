@@ -1,0 +1,8 @@
+[tools]
+dotnet = "10.0.301"
+just = "1.53.0"
+opentofu = "1.12.3"
+
+[env]
+DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+DOTNET_NOLOGO = "1"

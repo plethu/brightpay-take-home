@@ -1,0 +1,74 @@
+.app-shell {
+    min-height: 100vh;
+    background: var(--page-background);
+    color: var(--text-primary);
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 4rem;
+    padding: 0.75rem clamp(1rem, 4vw, 3rem);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface);
+}
+
+.brand {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.brand:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 0.25rem;
+}
+
+.header-note {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.app-main {
+    width: min(100%, 72rem);
+    margin-inline: auto;
+    padding: clamp(1.25rem, 4vw, 3rem);
+}
+
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1000;
+    padding: 0.75rem 3rem 0.75rem 1rem;
+    border-top: 1px solid #7f1d1d;
+    background: #fee2e2;
+    color: #450a0a;
+}
+
+#blazor-error-ui .reload {
+    color: inherit;
+    font-weight: 700;
+}
+
+#blazor-error-ui .dismiss {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.75rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}
+
+@media (max-width: 36rem) {
+    .app-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

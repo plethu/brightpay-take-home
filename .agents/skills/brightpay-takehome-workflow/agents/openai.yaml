@@ -1,0 +1,4 @@
+interface:
+  display_name: "BrightPay Take-Home Workflow"
+  short_description: "Plan and deliver interview take-home slices"
+  default_prompt: "Use $brightpay-takehome-workflow to plan the next interview take-home implementation slice."
