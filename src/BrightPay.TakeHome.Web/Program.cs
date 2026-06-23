@@ -2,8 +2,7 @@ using BrightPay.TakeHome.Web.Components;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+builder.Services.AddRazorComponents();
 
 WebApplication app = builder.Build();
 
@@ -23,7 +22,6 @@ if (!app.Configuration.GetValue<bool>("DisableHttpsRedirection"))
 _ = app.UseAntiforgery();
 
 _ = app.MapStaticAssets();
-_ = app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+_ = app.MapRazorComponents<App>();
 
 await app.RunAsync().ConfigureAwait(false);

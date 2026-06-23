@@ -3,7 +3,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Directory.Build.props Directory.Packages.props BrightPay.TakeHome.slnx ./
+COPY NuGet.Config Directory.Build.props Directory.Packages.props BrightPay.TakeHome.slnx ./
 COPY src/BrightPay.TakeHome.Core/BrightPay.TakeHome.Core.csproj src/BrightPay.TakeHome.Core/
 COPY src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj src/BrightPay.TakeHome.Web/
 COPY tests/BrightPay.TakeHome.Tests.Unit/BrightPay.TakeHome.Tests.Unit.csproj tests/BrightPay.TakeHome.Tests.Unit/

@@ -4,7 +4,7 @@ Use `just` as the primary task runner.
 
 | Command | Purpose |
 | --- | --- |
-| `just check` | Full quality gate: unit tests, component tests, containerized E2E, formatting. |
+| `just check` | Full quality gate: unit tests, component tests, containerized E2E, formatting, and infrastructure validation. |
 | `just check-host` | Faster host-only gate: unit tests, component tests, formatting. |
 | `just test` | All tests, including containerized E2E. |
 | `just test-unit` | Unit tests only. |
