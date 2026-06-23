@@ -154,3 +154,21 @@ Concerns:
 ## Scope
 
 Way over-scoped, intent for 02 is to trim this down and organise this into deliverable milestones, cut whatever isn't MVP, etc.
+
+## Addendum — 23/6/26 (after the PDF spec landed)
+
+_Coming back to most of the above now that I've got the actual PDF spec instead
+of the summary I was working from. Short version: this is far less e-commerce and
+far more checkout till than I assumed. No browse grid, no categories, no auth /
+clubcard gate, no product images or CDN/thumbnail faff, no admin CRUD. It's a
+cashier scanning SKUs and watching a total update, with multi-buy offers. So most
+of the Screens/Routes and Infra/services sections up top are out of scope, and I
+should stop treating this like a shop._
+
+_What held up well: the entity shapes. Product keyed on SKU, Offer as a
+configurable "X for Y" with its own state enum, the money-type questions, and the
+cart as `{ [sku]: count }` calculated rather than stored statefully. Those still
+feel right and I'm keeping them as the starting point for the domain model. The
+offers registry / per-type service chain is still overkill for what the spec
+needs, but the "offer type + configurable algorithm" instinct survives in a
+trimmed-down form._
