@@ -149,4 +149,14 @@ Current read:
 * Styling target: work-tool, compact receipt, clear total, large add targets,
   visible offers. Less SaaS-card, less hardware costume.
 
-I'll draw E from this and run the D4 axe-core / keyboard checks after.
+Follow-up E hardening:
+
+* Keep a persistent assistive live region separate from the visual toast, so
+  toast visibility changes do not swallow announcements.
+* When a focused receipt line is removed, move focus to the next line control or
+  back to the add pad instead of dropping focus on the document.
+* Shape mockup forms like the production no-JS contract (`method`/`action` on
+  add, line quantity, clear and charge paths), even though the static file still
+  intercepts them for the live demo.
+* Treat the JavaScript as disposable interaction scaffolding: JSDoc-typed,
+  `// @ts-check` friendly, and escaped where it still uses string-built markup.

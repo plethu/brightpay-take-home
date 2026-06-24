@@ -598,6 +598,19 @@
             color: var(--color-text);
         }
 
+        .visually-hidden {
+            position: absolute;
+            inline-size: 1px;
+            block-size: 1px;
+            padding: 0;
+            border: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
         /* Confirm dialog for the destructive clear. Native <dialog> so focus
          * trapping, Esc, and the backdrop come for free. */
         .confirm {
@@ -639,6 +652,23 @@
             border-color: var(--color-danger-border);
             color: var(--color-danger-text);
         }
+
+        .action-form {
+            display: flex;
+            min-inline-size: 0;
+        }
+
+        .action-form-clear {
+            flex: 1 1 0;
+        }
+
+        .action-form-checkout {
+            flex: 3 1 0;
+        }
+
+        .action-form .btn {
+            inline-size: 100%;
+        }
     </style>
 </head>
 <body>
@@ -649,10 +679,21 @@
     </div>
 
     <main class="mockup-shell">
+        <noscript>
+            <p class="banner-error" role="status">
+                This static mockup needs JavaScript for the live basket demo. The
+                production Blazor interface should keep these form actions as
+                server-handled no-JS paths before adding interactivity.
+            </p>
+        </noscript>
+
         <div class="till-e">
             <!-- LEFT: the add pad (touch-first) + manual/scan fallback -->
             <section class="pane add-pane" aria-labelledby="add-hd">
-                <form class="add-form" novalidate>
+                <!-- Static mockup note: JS intercepts this form. The method/action
+                     keep the markup shaped like the server-rendered Blazor form
+                     that will handle the no-JS path in production. -->
+                <form class="add-form" method="post" action="/checkout/items" novalidate>
                     <div class="add-head">
                         <h2 class="pane-title" id="add-hd">Add to sale</h2>
                         <div class="qty">
@@ -719,19 +760,28 @@
                 <div class="total-foot">
                     <div class="totals" data-region="totals" aria-live="polite"></div>
                     <div class="total-actions">
-                        <button type="button" class="btn btn-clear" data-action="clear">Clear</button>
-                        <button type="button" class="btn btn-checkout" data-action="checkout">
-                            <span class="checkout-label">Charge</span>
-                            <span class="checkout-amount" data-total>£0.00</span>
-                        </button>
+                        <form class="action-form action-form-clear" method="get" action="/checkout/clear">
+                            <button type="submit" class="btn btn-clear" data-action="clear">Clear</button>
+                        </form>
+                        <form class="action-form action-form-checkout" method="post" action="/checkout/charge">
+                            <button type="submit" class="btn btn-checkout" data-action="checkout">
+                                <span class="checkout-label">Charge</span>
+                                <span class="checkout-amount" data-total>£0.00</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </section>
         </div>
     </main>
 
-    <!-- Add confirmation (JS-enhanced). No-JS reloads and the basket confirms. -->
-    <div class="toast" role="status" aria-live="polite" hidden>
+    <!-- Persistent AT announcement channel. The visual toast can be hidden
+         without swallowing the live-region text update. -->
+    <div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true" data-live-region></div>
+
+    <!-- Add confirmation (JS-enhanced). No-JS production routes will confirm via
+         the server-rendered basket state instead. -->
+    <div class="toast" hidden>
         <span class="toast-icon" aria-hidden="true">✓</span>
         <span class="toast-msg" data-toast-msg></span>
         <button type="button" class="toast-dismiss" aria-label="Dismiss notification">✕</button>
