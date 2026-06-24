@@ -2,7 +2,7 @@ name: brightpay-takehome
 
 services:
   db:
-    image: ${SQL_SERVER_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}
+    image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: ${DB_CONTAINER_NAME:-brightpay-takehome-db}
     environment:
       ACCEPT_EULA: "Y"
@@ -13,7 +13,7 @@ services:
       - sql-data:/var/opt/mssql
 
   web:
-    image: ${DOTNET_SDK_IMAGE:-mcr.microsoft.com/dotnet/sdk:10.0.203}
+    image: mcr.microsoft.com/dotnet/sdk:10.0.203
     container_name: ${DEV_CONTAINER_NAME:-brightpay-takehome-web}
     depends_on:
       - db
@@ -42,15 +42,32 @@ services:
       - nuget-cache:/workspace/.nuget/packages
       - dotnet-home:/tmp/dotnet-home
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    environment:
+      ConnectionStrings__CheckoutDatabase: ${CONTAINER_CONNECTIONSTRINGS__CHECKOUTDATABASE:-Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=BrightPay_takehome_Passw0rd!;TrustServerCertificate=True}
+      DisableHttpsRedirection: "true"
+    expose:
+      - "8080"
+    networks:
+      default:
+        aliases:
+          - checkout-web
+
   e2e:
     image: mcr.microsoft.com/playwright/dotnet:v1.60.0-noble
     depends_on:
       - db
+      - app
     working_dir: /src
     command:
       - ./scripts/run-compose-e2e.sh
     environment:
-      ConnectionStrings__CheckoutDatabase: ${CONTAINER_CONNECTIONSTRINGS__CHECKOUTDATABASE:-Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=BrightPay_takehome_Passw0rd!;TrustServerCertificate=True}
+      E2E_BASE_URL: http://checkout-web:8080
     volumes:
       - .:/src
       - nuget-cache:/root/.nuget/packages

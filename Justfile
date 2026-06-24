@@ -37,6 +37,7 @@ test-components: build
 
 # Run containerized Playwright E2E tests.
 test-e2e: db-up
+    {{ compose }} up --detach --build app
     {{ compose }} run --rm e2e
 
 # Run E2E tests against E2E_BASE_URL.
