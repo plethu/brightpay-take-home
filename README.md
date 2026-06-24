@@ -35,3 +35,14 @@ connection strings and host EF commands derive from that value unless
 `ConnectionStrings__CheckoutDatabase` is explicitly set.
 
 Run `just` to list the available commands.
+
+## Checkout backend shape
+
+The backend keeps the suggested checkout shape, but does not implement the
+sample `ICheckout` literally. The domain uses a typed `Sku`, NodaMoney `Money`
+values, explicit operation results for expected validation failures, and a
+checkout transaction constructed from the active pricing rules.
+
+D1 implements unit-price totals only. Products and active offer definitions are
+persisted and seeded in SQL Server so the next slice can add the
+quantity-for-fixed-price evaluator without reshaping the catalogue model.

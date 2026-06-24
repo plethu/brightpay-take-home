@@ -18,5 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BrightPay.TakeHome.Core\BrightPay.TakeHome.Core.csproj" />
+    <ProjectReference Include="..\..\src\BrightPay.TakeHome.Web\BrightPay.TakeHome.Web.csproj" />
   </ItemGroup>
 </Project>

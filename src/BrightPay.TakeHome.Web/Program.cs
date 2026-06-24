@@ -1,12 +1,13 @@
 using System.Globalization;
 using BrightPay.TakeHome.Web.Components;
 using BrightPay.TakeHome.Web.Data;
+using BrightPay.TakeHome.Web.Features.Checkout;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-_ = builder.Host.UseSerilog((context, configuration) =>
+builder.Host.UseSerilog((context, configuration) =>
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .Enrich.FromLogContext()
@@ -15,48 +16,63 @@ _ = builder.Host.UseSerilog((context, configuration) =>
 // Cultures the UI is translated for. The first entry is the default.
 string[] supportedCultures = ["en-GB"];
 
-_ = builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-_ = builder.Services.Configure<RequestLocalizationOptions>(options =>
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-    _ = options.SetDefaultCulture(supportedCultures[0])
+    options.SetDefaultCulture(supportedCultures[0])
         .AddSupportedCultures(supportedCultures)
         .AddSupportedUICultures(supportedCultures);
     options.ApplyCurrentCultureToResponseHeaders = true;
 });
 
 // App.razor resolves the theme cookie to server-render data-theme without flicker.
-_ = builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpContextAccessor();
 
-_ = builder.Services.AddRazorComponents()
+builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 string? checkoutConnection = builder.Configuration.GetConnectionString("CheckoutDatabase");
 if (!string.IsNullOrWhiteSpace(checkoutConnection))
 {
-    _ = builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
+    builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
+    builder.Services.AddScoped<CheckoutCatalogService>();
 }
 
 WebApplication app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    _ = app.UseExceptionHandler("/error", createScopeForErrors: true);
-    _ = app.UseHsts();
+    app.UseExceptionHandler("/error", createScopeForErrors: true);
+    app.UseHsts();
 }
 
-_ = app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-_ = app.UseSerilogRequestLogging();
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseSerilogRequestLogging();
 
 if (!app.Configuration.GetValue<bool>("DisableHttpsRedirection"))
 {
-    _ = app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
 }
 
-_ = app.UseRequestLocalization();
-_ = app.UseAntiforgery();
+app.UseRequestLocalization();
+app.UseAntiforgery();
 
-_ = app.MapStaticAssets();
-_ = app.MapRazorComponents<App>()
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+if (!string.IsNullOrWhiteSpace(checkoutConnection))
+{
+    AsyncServiceScope scope = app.Services.CreateAsyncScope();
+    try
+    {
+        CheckoutDbContext dbContext = scope.ServiceProvider.GetRequiredService<CheckoutDbContext>();
+        await dbContext.Database.MigrateAsync().ConfigureAwait(false);
+    }
+    finally
+    {
+        await scope.DisposeAsync().ConfigureAwait(false);
+    }
+}
 
 await app.RunAsync().ConfigureAwait(false);

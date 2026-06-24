@@ -63,9 +63,8 @@ resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
 
 # Serverless tier with auto-pause: an idle demo costs storage only, and resumes
 # on the next connection.
-# TODO(D1): the database is created empty. Once EF migrations exist, the schema
-# needs applying on deploy (startup MigrateAsync in the app, or a one-off init
-# step) or the container will start against a database with no tables.
+# The app applies EF migrations on startup when the checkout database connection
+# string is configured, so first deploy can start from an empty database.
 resource "azurerm_mssql_database" "checkout" {
   name                        = "BrightPayTakeHome"
   server_id                   = azurerm_mssql_server.this.id

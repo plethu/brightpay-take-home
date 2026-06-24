@@ -10,7 +10,7 @@ public sealed class HomePageSmokeTests : PageTest
     {
         string baseUrl = RequireBaseUrl();
 
-        _ = await Page.GotoAsync(baseUrl);
+        await Page.GotoAsync(baseUrl);
 
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "BrightPay Checkout", Exact = true }))
             .ToBeVisibleAsync();

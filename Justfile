@@ -39,9 +39,17 @@ build: restore
 test-unit: build
     dotnet test {{ unit_tests }} --configuration Release --no-build
 
+# Run unit tests matching a class, method, or namespace substring.
+test-unit-filter filter: build
+    dotnet test {{ unit_tests }} --configuration Release --no-build --filter "FullyQualifiedName~{{ filter }}"
+
 # Run bUnit component tests.
 test-components: build
     dotnet test {{ component_tests }} --configuration Release --no-build
+
+# Run bUnit component tests matching a class, method, or namespace substring.
+test-components-filter filter: build
+    dotnet test {{ component_tests }} --configuration Release --no-build --filter "FullyQualifiedName~{{ filter }}"
 
 # Run containerized Playwright E2E tests.
 test-e2e: db-up
@@ -52,16 +60,56 @@ test-e2e: db-up
 test-e2e-host:
     dotnet test {{ e2e_project }} --configuration Release --filter "Category=E2E"
 
+# Run E2E tests against E2E_BASE_URL matching a class, method, or namespace substring.
+test-e2e-host-filter filter:
+    dotnet test {{ e2e_project }} --configuration Release --filter "Category=E2E&FullyQualifiedName~{{ filter }}"
+
 # Run all tests.
 test: test-unit test-components test-e2e
+
+# Restore local .NET tools inside the running web container.
+tools-restore-web:
+    {{ compose }} exec web dotnet tool restore
 
 # Apply EF Core migrations to the local checkout database.
 db-update:
     dotnet tool run dotnet-ef database update --project {{ web_project }} --startup-project {{ web_project }}
 
+# Add an EF Core migration on the host.
+db-migration name:
+    dotnet tool run dotnet-ef migrations add {{ name }} --project {{ web_project }} --startup-project {{ web_project }} --output-dir Data/Migrations
+
 # Generate an idempotent SQL migration script.
 db-script:
     dotnet tool run dotnet-ef migrations script --idempotent --project {{ web_project }} --startup-project {{ web_project }}
+
+# Apply EF Core migrations inside the running web container.
+db-update-web: tools-restore-web
+    {{ compose }} exec web dotnet tool run dotnet-ef database update --project {{ web_project }} --startup-project {{ web_project }}
+
+# Add an EF Core migration inside the running web container.
+db-migration-web name: tools-restore-web
+    {{ compose }} exec web dotnet tool run dotnet-ef migrations add {{ name }} --project {{ web_project }} --startup-project {{ web_project }} --output-dir Data/Migrations
+
+# Generate an idempotent SQL migration script inside the running web container.
+db-script-web: tools-restore-web
+    {{ compose }} exec web dotnet tool run dotnet-ef migrations script --idempotent --project {{ web_project }} --startup-project {{ web_project }}
+
+# Run unit tests inside the running web container.
+test-unit-web:
+    {{ compose }} exec web dotnet test {{ unit_tests }} --configuration Release
+
+# Run unit tests inside the running web container, filtered by substring.
+test-unit-filter-web filter:
+    {{ compose }} exec web dotnet test {{ unit_tests }} --configuration Release --filter "FullyQualifiedName~{{ filter }}"
+
+# Run bUnit component tests inside the running web container.
+test-components-web:
+    {{ compose }} exec web dotnet test {{ component_tests }} --configuration Release
+
+# Run bUnit component tests inside the running web container, filtered by substring.
+test-components-filter-web filter:
+    {{ compose }} exec web dotnet test {{ component_tests }} --configuration Release --filter "FullyQualifiedName~{{ filter }}"
 
 # Verify .NET formatting.
 fmt: restore

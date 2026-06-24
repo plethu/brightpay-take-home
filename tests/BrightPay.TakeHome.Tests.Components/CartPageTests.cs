@@ -9,7 +9,7 @@ public sealed class CartPageTests : BunitContext
 {
     public CartPageTests()
     {
-        _ = Services.AddLocalization(options => options.ResourcesPath = "Resources");
+        Services.AddLocalization(options => options.ResourcesPath = "Resources");
     }
 
     [Fact]
@@ -17,6 +17,6 @@ public sealed class CartPageTests : BunitContext
     {
         IRenderedComponent<Cart> component = Render<Cart>();
 
-        _ = component.Find("h1").TextContent.Should().Be("BrightPay Checkout");
+        component.Find("h1").TextContent.Should().Be("BrightPay Checkout");
     }
 }

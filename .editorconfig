@@ -67,6 +67,19 @@ dotnet_diagnostic.CA1303.severity = none
 
 [src/BrightPay.TakeHome.Web/Data/Migrations/*.cs]
 generated_code = true
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.MA0048.severity = none
+dotnet_diagnostic.MA0051.severity = none
+
+[src/BrightPay.TakeHome.Web/Program.cs]
+dotnet_diagnostic.IDE0058.severity = none
+
+[src/BrightPay.TakeHome.Web/Data/*DbContext.cs]
+dotnet_diagnostic.IDE0058.severity = none
+
+[tests/**/*.cs]
+dotnet_diagnostic.IDE0058.severity = none
 
 [tests/BrightPay.TakeHome.Tests.Components/*.cs]
 # bUnit test classes inherit IDisposable through BunitContext; xUnit owns disposal.
