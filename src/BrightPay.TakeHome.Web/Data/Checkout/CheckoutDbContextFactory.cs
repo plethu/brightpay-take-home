@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace BrightPay.TakeHome.Web.Data;
+namespace BrightPay.TakeHome.Web.Data.Checkout;
 
 /// <summary>
 /// Design-time factory so <c>dotnet ef</c> can build the context without booting

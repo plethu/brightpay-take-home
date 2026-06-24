@@ -1,5 +1,7 @@
-using BrightPay.TakeHome.Core.Checkout;
+using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Offers;
+using BrightPay.TakeHome.Core.Checkout.Pricing;
+using BrightPay.TakeHome.Core.Checkout.Transactions;
 
 namespace BrightPay.TakeHome.Web.Features.Checkout;
 

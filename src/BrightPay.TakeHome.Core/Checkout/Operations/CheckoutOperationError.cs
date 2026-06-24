@@ -1,4 +1,4 @@
-namespace BrightPay.TakeHome.Core.Checkout;
+namespace BrightPay.TakeHome.Core.Checkout.Operations;
 
 public enum CheckoutOperationError
 {

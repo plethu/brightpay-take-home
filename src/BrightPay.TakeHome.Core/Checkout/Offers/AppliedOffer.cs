@@ -1,4 +1,5 @@
 using NodaMoney;
+using BrightPay.TakeHome.Core.Checkout.Identifiers;
 
 namespace BrightPay.TakeHome.Core.Checkout.Offers;
 

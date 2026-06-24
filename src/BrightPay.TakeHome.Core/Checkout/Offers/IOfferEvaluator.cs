@@ -1,3 +1,5 @@
+using BrightPay.TakeHome.Core.Checkout.Basket;
+
 namespace BrightPay.TakeHome.Core.Checkout.Offers;
 
 public interface IOfferEvaluator

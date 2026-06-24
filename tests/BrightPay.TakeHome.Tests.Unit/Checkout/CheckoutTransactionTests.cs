@@ -1,5 +1,9 @@
 using AwesomeAssertions;
-using BrightPay.TakeHome.Core.Checkout;
+using BrightPay.TakeHome.Core.Checkout.Basket;
+using BrightPay.TakeHome.Core.Checkout.Operations;
+using BrightPay.TakeHome.Core.Checkout.Pricing;
+using BrightPay.TakeHome.Core.Checkout.Transactions;
+using BrightPay.TakeHome.Core.Checkout.Identifiers;
 
 namespace BrightPay.TakeHome.Tests.Unit.Checkout;
 

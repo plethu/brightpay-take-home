@@ -1,7 +1,7 @@
 using System.Globalization;
 using Vogen;
 
-namespace BrightPay.TakeHome.Core.Checkout;
+namespace BrightPay.TakeHome.Core.Checkout.Identifiers;
 
 [ValueObject<string>]
 public readonly partial struct Sku

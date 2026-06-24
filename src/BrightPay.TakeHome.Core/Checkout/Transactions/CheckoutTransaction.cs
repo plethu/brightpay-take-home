@@ -1,6 +1,10 @@
 using NodaMoney;
+using BrightPay.TakeHome.Core.Checkout.Basket;
+using BrightPay.TakeHome.Core.Checkout.Operations;
+using BrightPay.TakeHome.Core.Checkout.Pricing;
+using BrightPay.TakeHome.Core.Checkout.Identifiers;
 
-namespace BrightPay.TakeHome.Core.Checkout;
+namespace BrightPay.TakeHome.Core.Checkout.Transactions;
 
 public sealed class CheckoutTransaction
 {

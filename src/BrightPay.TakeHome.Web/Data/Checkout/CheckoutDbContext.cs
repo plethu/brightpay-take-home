@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace BrightPay.TakeHome.Web.Data;
+namespace BrightPay.TakeHome.Web.Data.Checkout;
 
 public sealed class CheckoutDbContext(DbContextOptions<CheckoutDbContext> options) : DbContext(options)
 {

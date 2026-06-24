@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
+using BrightPay.TakeHome.Core.Checkout.Identifiers;
 
-namespace BrightPay.TakeHome.Core.Checkout;
+namespace BrightPay.TakeHome.Core.Checkout.Basket;
 
 public sealed record BasketSnapshot
 {

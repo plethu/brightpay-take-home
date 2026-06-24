@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using BrightPay.TakeHome.Core.Checkout;
+using BrightPay.TakeHome.Core.Checkout.Identifiers;
 
 namespace BrightPay.TakeHome.Tests.Unit.Checkout;
 

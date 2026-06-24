@@ -1,6 +1,6 @@
 using System.Globalization;
 using BrightPay.TakeHome.Web.Components;
-using BrightPay.TakeHome.Web.Data;
+using BrightPay.TakeHome.Web.Data.Checkout;
 using BrightPay.TakeHome.Web.Features.Checkout;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

@@ -1,4 +1,6 @@
-namespace BrightPay.TakeHome.Core.Checkout;
+using BrightPay.TakeHome.Core.Checkout.Basket;
+
+namespace BrightPay.TakeHome.Core.Checkout.Operations;
 
 public sealed record CheckoutOperationResult
 {

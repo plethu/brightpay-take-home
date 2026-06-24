@@ -1,3 +1,4 @@
+using BrightPay.TakeHome.Core.Checkout.Pricing;
 using NodaMoney;
 
 namespace BrightPay.TakeHome.Core.Checkout.Offers;
@@ -6,20 +7,9 @@ public sealed record QuantityForFixedPriceConfiguration
 {
     public QuantityForFixedPriceConfiguration(int quantity, Money fixedPrice)
     {
-        if (quantity <= 1)
-        {
-            throw new ArgumentOutOfRangeException(nameof(quantity), quantity, "Offer quantity must be greater than one.");
-        }
-
-        if (!string.Equals(fixedPrice.Currency.Code, CheckoutMoney.CurrencyCode, StringComparison.Ordinal))
-        {
-            throw new ArgumentException("Offer prices must be in GBP.", nameof(fixedPrice));
-        }
-
-        if (fixedPrice.Amount < 0m)
-        {
-            throw new ArgumentOutOfRangeException(nameof(fixedPrice), fixedPrice, "Offer price cannot be negative.");
-        }
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(quantity, 1);
+        CheckoutMoney.ThrowIfNotCheckoutCurrency(fixedPrice, nameof(fixedPrice), "Offer prices must be in GBP.");
+        ArgumentOutOfRangeException.ThrowIfNegative(fixedPrice.Amount, nameof(fixedPrice));
 
         Quantity = quantity;
         FixedPrice = fixedPrice;

@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using BrightPay.TakeHome.Web.Data;
+using BrightPay.TakeHome.Web.Data.Checkout;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;

@@ -1,6 +1,9 @@
-using BrightPay.TakeHome.Core.Checkout;
+using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Offers;
-using BrightPay.TakeHome.Web.Data;
+using BrightPay.TakeHome.Core.Checkout.Operations;
+using BrightPay.TakeHome.Core.Checkout.Pricing;
+using BrightPay.TakeHome.Core.Checkout.Identifiers;
+using BrightPay.TakeHome.Web.Data.Checkout;
 using Microsoft.EntityFrameworkCore;
 
 namespace BrightPay.TakeHome.Web.Features.Checkout;
@@ -24,10 +27,7 @@ public sealed class CheckoutCatalogService
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
-        ProductPrice[] productPrices =
-        [
-            .. products.Select(product => new ProductPrice(Sku.From(product.Sku), CheckoutMoney.Pounds(product.UnitPriceAmount))),
-        ];
+        ProductPrice[] productPrices = [.. products.Select(CheckoutCatalogMapper.ToProductPrice)];
 
         OfferDefinition[] offers =
         [
@@ -35,7 +35,7 @@ public sealed class CheckoutCatalogService
             .SelectMany(product => product.Offers)
             .OrderBy(offer => offer.Sku, StringComparer.Ordinal)
             .ThenBy(offer => offer.Code, StringComparer.Ordinal)
-            .Select(MapOffer),
+            .Select(CheckoutCatalogMapper.ToOfferDefinition),
         ];
 
         return new CheckoutCatalogSnapshot(productPrices, offers);
@@ -54,14 +54,7 @@ public sealed class CheckoutCatalogService
         return
         [
             .. products
-            .Select(product => new CheckoutCatalogItem(
-                Sku.From(product.Sku),
-                product.UnitPriceAmount,
-                [
-                    .. product.Offers
-                    .OrderBy(offer => offer.Code, StringComparer.Ordinal)
-                    .Select(MapOfferItem),
-                ])),
+            .Select(CheckoutCatalogMapper.ToCatalogItem),
         ];
     }
 
@@ -88,24 +81,4 @@ public sealed class CheckoutCatalogService
 
         return catalog.StartTransaction(basket).Clear();
     }
-
-    private static CheckoutOfferItem MapOfferItem(CheckoutOfferEntity offer) =>
-        new(
-            offer.Code,
-            Sku.From(offer.Sku),
-            (OfferType)offer.Type,
-            (OfferState)offer.State,
-            offer.Quantity,
-            offer.FixedPriceAmount);
-
-    private static OfferDefinition MapOffer(CheckoutOfferEntity offer) =>
-        new(
-            offer.Code,
-            Sku.From(offer.Sku),
-            (OfferType)offer.Type,
-            (OfferState)offer.State,
-            new QuantityForFixedPriceOfferConfiguration(
-                new QuantityForFixedPriceConfiguration(
-                    offer.Quantity,
-                    CheckoutMoney.Pounds(offer.FixedPriceAmount))));
 }

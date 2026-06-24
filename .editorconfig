@@ -75,7 +75,7 @@ dotnet_diagnostic.MA0051.severity = none
 [src/BrightPay.TakeHome.Web/Program.cs]
 dotnet_diagnostic.IDE0058.severity = none
 
-[src/BrightPay.TakeHome.Web/Data/*DbContext.cs]
+[src/BrightPay.TakeHome.Web/Data/Checkout/*DbContext.cs]
 dotnet_diagnostic.IDE0058.severity = none
 
 [tests/**/*.cs]
