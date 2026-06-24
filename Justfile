@@ -7,13 +7,21 @@ unit_tests := "tests/BrightPay.TakeHome.Tests.Unit/BrightPay.TakeHome.Tests.Unit
 component_tests := "tests/BrightPay.TakeHome.Tests.Components/BrightPay.TakeHome.Tests.Components.csproj"
 e2e_project := "tests/BrightPay.TakeHome.Tests.E2E/BrightPay.TakeHome.Tests.E2E.csproj"
 tooling_project := "tools/BrightPay.TakeHome.Tooling/BrightPay.TakeHome.Tooling.csproj"
-container_runtime := env_var_or_default("CONTAINER_RUNTIME", "podman")
+container_runtime := env_var_or_default("CONTAINER_RUNTIME", "docker")
 compose := if container_runtime == "docker" { "docker compose" } else { "podman-compose" }
 tofu := env_var_or_default("TOFU", "mise exec -- tofu")
+sql_host_port := env_var_or_default("SQL_HOST_PORT", "14333")
+sql_server_password := env_var_or_default("SQL_SERVER_PASSWORD", "BrightPay_takehome_Passw0rd!")
+host_checkout_connection := env_var_or_default(
+    "ConnectionStrings__CheckoutDatabase",
+    "Server=127.0.0.1," + sql_host_port + ";Database=BrightPayTakeHome;User Id=sa;Password=" + sql_server_password + ";TrustServerCertificate=True",
+)
 
 export DOTNET_CLI_HOME := ".dotnet"
 export DOTNET_CLI_TELEMETRY_OPTOUT := "1"
 export DOTNET_NOLOGO := "1"
+export ConnectionStrings__CheckoutDatabase := host_checkout_connection
+export SQL_SERVER_PASSWORD := sql_server_password
 
 # Verify that repo toolchain pins agree.
 toolchain-check:

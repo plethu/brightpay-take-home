@@ -62,10 +62,12 @@ dotnet_analyzer_diagnostic.category-Security.severity = warning
 dotnet_analyzer_diagnostic.category-Style.severity = warning
 dotnet_analyzer_diagnostic.category-Usage.severity = warning
 
-dotnet_diagnostic.CA1001.severity = none
 dotnet_diagnostic.CA1031.severity = warning
 dotnet_diagnostic.CA1303.severity = none
-dotnet_diagnostic.CA1515.severity = none
 
 [src/BrightPay.TakeHome.Web/Data/Migrations/*.cs]
 generated_code = true
+
+[tests/BrightPay.TakeHome.Tests.Components/*.cs]
+# bUnit test classes inherit IDisposable through BunitContext; xUnit owns disposal.
+dotnet_diagnostic.CA1001.severity = none

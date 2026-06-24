@@ -7,9 +7,9 @@
 ## Prerequisites
 
 - [`mise`](https://mise.jdx.dev/getting-started.html) for devtool versioning;
-- [Podman](https://podman.io/docs/installation) with `podman-compose`, or
-  [Docker](https://docs.docker.com/get-started/get-docker/) with Docker
-  Compose.
+- [Docker](https://docs.docker.com/get-started/get-docker/) with Docker
+  Compose, or [Podman](https://podman.io/docs/installation) with
+  `podman-compose`.
 
 ## Usage
 
@@ -23,5 +23,13 @@ just up
 ```
 
 `just up` starts SQL Server and the Blazor app, clears the terminal, and prints some helpers for development.
+
+Docker is the default local container runtime. To use Podman instead, set
+`CONTAINER_RUNTIME=podman` in `.env` after confirming `podman-compose` works on
+your machine.
+
+The local SQL password is controlled by `SQL_SERVER_PASSWORD`; the Docker
+connection strings and host EF commands derive from that value unless
+`ConnectionStrings__CheckoutDatabase` is explicitly set.
 
 Run `just` to list the available commands.

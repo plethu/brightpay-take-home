@@ -2,7 +2,7 @@ name: brightpay-takehome
 
 services:
   db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04
     container_name: ${DB_CONTAINER_NAME:-brightpay-takehome-db}
     environment:
       ACCEPT_EULA: "Y"
@@ -29,7 +29,7 @@ services:
       - http://0.0.0.0:8080
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      ConnectionStrings__CheckoutDatabase: ${CONTAINER_CONNECTIONSTRINGS__CHECKOUTDATABASE:-Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=BrightPay_takehome_Passw0rd!;TrustServerCertificate=True}
+      ConnectionStrings__CheckoutDatabase: Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=${SQL_SERVER_PASSWORD:-BrightPay_takehome_Passw0rd!};TrustServerCertificate=True
       DisableHttpsRedirection: "true"
       DOTNET_CLI_HOME: /tmp/dotnet-home
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -49,7 +49,7 @@ services:
     depends_on:
       - db
     environment:
-      ConnectionStrings__CheckoutDatabase: ${CONTAINER_CONNECTIONSTRINGS__CHECKOUTDATABASE:-Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=BrightPay_takehome_Passw0rd!;TrustServerCertificate=True}
+      ConnectionStrings__CheckoutDatabase: Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=${SQL_SERVER_PASSWORD:-BrightPay_takehome_Passw0rd!};TrustServerCertificate=True
       DisableHttpsRedirection: "true"
     expose:
       - "8080"
@@ -70,7 +70,7 @@ services:
       E2E_BASE_URL: http://checkout-web:8080
     volumes:
       - .:/src
-      - nuget-cache:/root/.nuget/packages
+      - nuget-cache:/src/.nuget/packages
       - e2e-dotnet:/opt/dotnet
 
 volumes:

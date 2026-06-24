@@ -10,9 +10,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- CA1515 wants the public types internal, but DI, EF Core, and Razor require them
-         public in the Web exe project. Suppress rather than fight the framework. -->
-    <NoWarn>$(NoWarn);CS1591;CA1515</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
