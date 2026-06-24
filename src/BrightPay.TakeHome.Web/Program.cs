@@ -35,6 +35,7 @@ string? checkoutConnection = builder.Configuration.GetConnectionString("Checkout
 if (!string.IsNullOrWhiteSpace(checkoutConnection))
 {
     builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
+    // Keep offer evaluator registrations manual until the list grows; evaluate Scrutor for autodiscovery later.
     builder.Services.AddScoped<CheckoutCatalogService>();
 }
 

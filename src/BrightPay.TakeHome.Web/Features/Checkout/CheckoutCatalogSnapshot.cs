@@ -1,5 +1,5 @@
 using BrightPay.TakeHome.Core.Checkout.Basket;
-using BrightPay.TakeHome.Core.Checkout.Offers;
+using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Core.Checkout.Transactions;
 

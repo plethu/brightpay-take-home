@@ -18,4 +18,8 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <ProjectReference Include="..\BrightPay.TakeHome.Core\BrightPay.TakeHome.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BrightPay.TakeHome.Tests.Unit" />
+  </ItemGroup>
 </Project>

@@ -1,6 +1,7 @@
-using BrightPay.TakeHome.Core.Checkout.Offers;
-using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
+using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
+using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
+using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Web.Data.Checkout;
 using Riok.Mapperly.Abstractions;
 
@@ -18,10 +19,9 @@ internal static partial class CheckoutCatalogMapper
             Sku.From(offer.Sku),
             (OfferType)offer.Type,
             (OfferState)offer.State,
-            new QuantityForFixedPriceOfferConfiguration(
-                new QuantityForFixedPriceConfiguration(
-                    offer.Quantity,
-                    CheckoutMoney.Pounds(offer.FixedPriceAmount))));
+            new QuantityForFixedPriceConfiguration(
+                offer.Quantity,
+                CheckoutMoney.Pounds(offer.FixedPriceAmount)));
 
     public static CheckoutCatalogItem ToCatalogItem(CheckoutProductEntity product) =>
         new(

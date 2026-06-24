@@ -1,9 +1,10 @@
+using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using NodaMoney;
 
-namespace BrightPay.TakeHome.Core.Checkout.Offers;
+namespace BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 
-public sealed record QuantityForFixedPriceConfiguration
+public sealed record QuantityForFixedPriceConfiguration : OfferConfiguration
 {
     public QuantityForFixedPriceConfiguration(int quantity, Money fixedPrice)
     {
