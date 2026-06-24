@@ -10,6 +10,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <!-- Source-generated, allocation-free domain-to-view-model mapping at the Web boundary. -->
+    <PackageReference Include="Riok.Mapperly" />
+    <!-- Structured request logging. -->
+    <PackageReference Include="Serilog.AspNetCore" />
     <ProjectReference Include="..\BrightPay.TakeHome.Core\BrightPay.TakeHome.Core.csproj" />
   </ItemGroup>
 </Project>

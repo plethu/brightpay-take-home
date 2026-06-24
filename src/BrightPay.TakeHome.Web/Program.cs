@@ -1,8 +1,16 @@
+using System.Globalization;
 using BrightPay.TakeHome.Web.Components;
 using BrightPay.TakeHome.Web.Data;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+_ = builder.Host.UseSerilog((context, configuration) =>
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture));
 
 // Cultures the UI is translated for. The first entry is the default.
 string[] supportedCultures = ["en-GB"];
@@ -22,8 +30,6 @@ _ = builder.Services.AddHttpContextAccessor();
 _ = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// SQL Server catalogue (D1). Registered when a connection string is configured so
-// the shell still runs standalone; design-time tooling uses CheckoutDbContextFactory.
 string? checkoutConnection = builder.Configuration.GetConnectionString("CheckoutDatabase");
 if (!string.IsNullOrWhiteSpace(checkoutConnection))
 {
@@ -39,6 +45,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 _ = app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+_ = app.UseSerilogRequestLogging();
 
 if (!app.Configuration.GetValue<bool>("DisableHttpsRedirection"))
 {

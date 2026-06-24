@@ -1,4 +1,4 @@
-using Shouldly;
+using AwesomeAssertions;
 
 namespace BrightPay.TakeHome.Tests.Unit;
 
@@ -8,5 +8,5 @@ public sealed class ScaffoldTests
 {
     [Fact]
     public void CoreProjectIsReferenced() =>
-        typeof(object).Assembly.GetName().Name.ShouldBe("System.Private.CoreLib");
+        typeof(object).Assembly.GetName().Name.Should().Be("System.Private.CoreLib");
 }

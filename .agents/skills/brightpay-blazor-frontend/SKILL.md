@@ -74,9 +74,6 @@ description: Build or review browser UI in this BrightPay Blazor take-home repos
   reduced-motion fallback.
 - Ensure loading, empty, validation-error, and failure states are visible where
   the workflow can reach them.
-- Remove the generated Counter and Weather pages when implementing the real
-  task unless they are deliberately repurposed.
-
 ## Browser Code & CSS
 
 - Do not add a TypeScript toolchain before there is browser code. When browser
