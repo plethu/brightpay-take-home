@@ -20,7 +20,7 @@ static int CheckToolchain()
         new(".mise.toml", ReadMiseDotnetVersion(Path.Combine(root, ".mise.toml"))),
         new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
         new("compose.yaml SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, "compose.yaml"))),
-        new(".env.example SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, ".env.example"))),
+        new("Dockerfile SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, "Dockerfile"))),
     ];
 
     string expectedDotnetSdkVersion = dotnetSdkPins[0].Version;

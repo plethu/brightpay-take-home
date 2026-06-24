@@ -1,14 +1,17 @@
 <Project>
   <PropertyGroup>
-    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Pin the analyzer wave to a fixed band, not "latest". "latest" resolves to whatever
+         analyzer pack an SDK build happens to ship, so the same 10.0.203 in the MCR container
+         image enabled rules the feed SDK did not (CA1515 et al.) and the image build failed
+         where local passed. A fixed band gives the same rule set everywhere. -->
+    <AnalysisLevel>10.0</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- CA1515 only fires on exe projects and flags the public types DI, EF Core, and
-         Razor require in the Web app. AnalysisLevel=latest makes it surface inconsistently
-         across SDK builds (e.g. the MCR container image), so suppress it deterministically. -->
+    <!-- CA1515 wants the public types internal, but DI, EF Core, and Razor require them
+         public in the Web exe project. Suppress rather than fight the framework. -->
     <NoWarn>$(NoWarn);CS1591;CA1515</NoWarn>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
