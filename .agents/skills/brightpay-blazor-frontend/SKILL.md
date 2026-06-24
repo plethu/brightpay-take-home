@@ -114,3 +114,26 @@ just test-e2e-host
 
 If browser dependencies are missing, record the install command and the unrun
 test layer in the handoff.
+
+### Screenshots for visual critique
+
+To see a page rendered (UI critique and iteration), drive the Chromium that
+ships in the compose `e2e` image. No host browser or Node is needed; call the
+bundled binary directly. Run in the **foreground** — backgrounded `docker run`
+screenshots have hung here. View the PNG with the Read tool afterward.
+
+```bash
+# Static file (e.g. scratch/mockups). The chromium-* dir drifts with the image
+# tag, so resolve it at call time. dbus errors printed headless are harmless.
+docker run --rm -v "$PWD":/src:ro -v /tmp/shots:/out \
+  mcr.microsoft.com/playwright/dotnet:v1.60.0-noble bash -lc \
+  '"$(ls /ms-playwright/chromium-*/chrome-linux64/chrome)" --headless --no-sandbox \
+   --disable-gpu --hide-scrollbars --force-color-profile=srgb \
+   --window-size=1280,1100 --virtual-time-budget=3000 \
+   --screenshot=/out/page.png "file:///src/scratch/mockups/a-two-column-till.html"'
+```
+
+For the running app, bring it up with `just up` and screenshot its URL instead
+of a `file://` path (join the compose network, or use the host-published port).
+The checkout mockups accept `?state=empty|added|error` and `?theme=light|dark`
+so a specific state/theme can be captured without editing markup.

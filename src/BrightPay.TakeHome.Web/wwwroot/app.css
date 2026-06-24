@@ -74,6 +74,11 @@
         --color-danger-surface: oklch(94% 0.04 25);
         --color-danger-border: oklch(63% 0.18 25);
         --color-danger-text: oklch(38% 0.13 25);
+        /* Success/savings. A cooler green than --color-accent (hue 160) so "money
+         * saved" reads distinct from the brand and from interactive accent. */
+        --color-success-surface: oklch(94% 0.04 150);
+        --color-success-border: oklch(58% 0.13 150);
+        --color-success-text: oklch(40% 0.11 150);
     }
 
     :root[data-theme="dark"] {
@@ -89,6 +94,9 @@
         --color-danger-surface: oklch(32% 0.08 25);
         --color-danger-border: oklch(58% 0.16 25);
         --color-danger-text: oklch(90% 0.05 25);
+        --color-success-surface: oklch(32% 0.07 150);
+        --color-success-border: oklch(55% 0.14 150);
+        --color-success-text: oklch(90% 0.06 150);
     }
 }
 

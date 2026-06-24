@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mockup A — Two-column till</title>
+    <link rel="stylesheet" href="../../src/BrightPay.TakeHome.Web/wwwroot/app.css">
+    <link rel="stylesheet" href="./mockups.css">
+    <style>
+        /* Layout A: operator console. Scan + reference on the left, basket and a
+         * sticky total on the right. Collapses to one column at the same ~48rem
+         * point so the responsive story stays simple. */
+        .till {
+            display: grid;
+            grid-template-columns: minmax(16rem, 22rem) 1fr;
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        .till > .col {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xl);
+        }
+
+        .till .totals {
+            position: sticky;
+            inset-block-start: var(--space-lg);
+        }
+
+        @media (width <= 48rem) {
+            .till {
+                grid-template-columns: 1fr;
+            }
+
+            .till .totals {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body data-default-state="added" data-empty-hint="Scan a SKU to start the transaction.">
+    <div class="mockup-bar">
+        <h1>Mockup A — Two-column till</h1>
+        <span class="mockup-note">Operator console: reference always in view, total pinned beside the basket.</span>
+    </div>
+
+    <main class="mockup-shell">
+        <div class="till">
+            <!-- LEFT: scan + reference -->
+            <div class="col">
+                <section class="panel" aria-labelledby="scan-h">
+                    <div class="panel-head">
+                        <h2 id="scan-h">Scan item</h2>
+                        <p>Enter a SKU and add it to the basket.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div data-region="alert"></div>
+                        <form class="scan-form" aria-describedby="scan-status">
+                            <div class="field">
+                                <label for="scan-a">SKU</label>
+                                <input id="scan-a" name="sku" data-scan autocomplete="off" maxlength="1" placeholder="e.g. A">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </form>
+                        <p class="hint" id="scan-status" data-region="status" aria-live="assertive"></p>
+                    </div>
+                </section>
+
+                <section class="panel" aria-labelledby="ref-h">
+                    <div class="panel-head">
+                        <h2 id="ref-h">Price list</h2>
+                        <p>Active offers shown against their SKU.</p>
+                    </div>
+                    <div class="panel-body">
+                        <table class="price-list">
+                            <caption>All prices in GBP (£).</caption>
+                            <thead>
+                                <tr><th scope="col">SKU</th><th scope="col">Unit</th><th scope="col">Offer</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="sku">A</td><td class="amount">£0.50</td><td><span class="offer-badge">3 for £1.30</span></td></tr>
+                                <tr><td class="sku">B</td><td class="amount">£0.30</td><td><span class="offer-badge">2 for £0.45</span></td></tr>
+                                <tr><td class="sku">C</td><td class="amount">£0.20</td><td>—</td></tr>
+                                <tr><td class="sku">D</td><td class="amount">£0.15</td><td>—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- RIGHT: basket + total -->
+            <div class="col">
+                <section class="panel" aria-labelledby="basket-h">
+                    <div class="panel-head">
+                        <h2 id="basket-h">Basket</h2>
+                        <p data-region="count"></p>
+                    </div>
+                    <div class="panel-body" data-region="basket"></div>
+                    <div class="totals" data-region="totals" aria-live="polite"></div>
+                    <div class="panel-body" style="display:flex; gap:var(--space-md); justify-content:flex-end;">
+                        <button type="button" class="btn btn-danger" data-action>Clear basket</button>
+                        <button type="button" class="btn btn-primary" data-action>Checkout</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script src="./mockups.js"></script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mockup D — Receipt + reference rail</title>
+    <link rel="stylesheet" href="../../src/BrightPay.TakeHome.Web/wwwroot/app.css">
+    <link rel="stylesheet" href="./mockups.css">
+    <style>
+        /* Layout D: the converged direction. Takes B's single vertical scan→total
+         * flow (no horizontal eye-travel) and fixes B's two weaknesses:
+         *   1. The total is a STICKY footer, so the hero number never scrolls
+         *      away on a long basket.
+         *   2. The price list is a PERSISTENT rail (A's requirement, not B's
+         *      collapsed <details>) — and each reference row is itself the add
+         *      control (C's idea), so "what's D?" and "add a D" are one surface.
+         * On narrow screens it stacks: scan → basket → total → reference. */
+        .till-d {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(15rem, 21rem);
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        @media (width <= 48rem) {
+            .till-d {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* LEFT: the receipt column. Flex so the total can stick to the bottom. */
+        .receipt-col {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .receipt-col .scan-form {
+            position: sticky;
+            inset-block-start: var(--space-sm);
+            z-index: 1;
+            padding: var(--space-md);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* The hero, pinned. Stays in view while the basket above it scrolls. */
+        .total-bar {
+            position: sticky;
+            inset-block-end: var(--space-sm);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+            padding: var(--space-lg);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .total-bar .totals {
+            padding: 0;
+            border: 0;
+        }
+
+        .total-bar .total-actions {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        /* RIGHT: the reference rail. Sticky so it stays beside a long basket. */
+        .ref-rail {
+            position: sticky;
+            inset-block-start: var(--space-sm);
+        }
+
+        .ref-add {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        /* Each reference entry is a real button: read the price AND add the SKU
+         * from the same row. Tap target, not a catalogue tile. */
+        .ref-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: var(--space-xs) var(--space-md);
+            inline-size: 100%;
+            padding: var(--space-md);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            color: var(--color-text);
+            text-align: start;
+            cursor: pointer;
+            transition: border-color var(--motion-fast) var(--easing-standard);
+        }
+
+        .ref-row:hover {
+            border-color: var(--color-accent);
+        }
+
+        .ref-row:active {
+            transform: translateY(1px);
+        }
+
+        .ref-row .sku {
+            grid-row: 1 / span 2;
+            align-self: start;
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+        }
+
+        .ref-row .ref-price {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+
+        .ref-row .ref-add-hint {
+            grid-row: 1 / span 2;
+            color: var(--color-text-muted);
+            font-size: var(--font-size-sm);
+            font-weight: 700;
+        }
+
+        .ref-row .offer-badge {
+            grid-column: 2;
+        }
+
+        .ref-row .ref-noffer {
+            grid-column: 2;
+            color: var(--color-text-muted);
+            font-size: var(--font-size-sm);
+        }
+    </style>
+</head>
+<body data-default-state="added" data-empty-hint="Scan a SKU, or tap one from the price list.">
+    <div class="mockup-bar">
+        <h1>Mockup D — Receipt + reference rail</h1>
+        <span class="mockup-note">Converged: B's vertical flow, a sticky total, and an always-visible price list whose rows add the SKU.</span>
+    </div>
+
+    <main class="mockup-shell">
+        <div class="till-d">
+            <!-- LEFT: scan (sticky top) → basket → total (sticky bottom) -->
+            <div class="receipt-col">
+                <form class="scan-form" aria-describedby="scan-status-d">
+                    <div class="field">
+                        <label for="scan-d">Scan SKU</label>
+                        <input id="scan-d" name="sku" data-scan autocomplete="off" maxlength="1" placeholder="e.g. A">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+                <p class="hint" id="scan-status-d" data-region="status" aria-live="assertive"></p>
+                <div data-region="alert"></div>
+
+                <section class="panel" aria-labelledby="basket-hd">
+                    <div class="panel-head">
+                        <h2 id="basket-hd">Current sale</h2>
+                        <p data-region="count"></p>
+                    </div>
+                    <div class="panel-body" data-region="basket"></div>
+                </section>
+
+                <div class="total-bar">
+                    <div class="totals" data-region="totals" aria-live="polite"></div>
+                    <div class="total-actions">
+                        <button type="button" class="btn btn-danger" data-action style="flex:1">Clear</button>
+                        <button type="button" class="btn btn-primary" data-action style="flex:2">Checkout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: persistent reference; each row is an add control -->
+            <aside class="ref-rail" aria-labelledby="ref-hd">
+                <div class="panel-head" style="border:0; padding-inline:0;">
+                    <h2 id="ref-hd">Price list</h2>
+                    <p>All prices GBP (£). Tap a SKU to add it.</p>
+                </div>
+                <div class="ref-add" role="group" aria-label="Add item from price list">
+                    <button type="submit" class="ref-row">
+                        <span class="sku">A</span>
+                        <span class="ref-price">£0.50</span>
+                        <span class="offer-badge">3 for £1.30</span>
+                        <span class="ref-add-hint">Add +</span>
+                    </button>
+                    <button type="submit" class="ref-row">
+                        <span class="sku">B</span>
+                        <span class="ref-price">£0.30</span>
+                        <span class="offer-badge">2 for £0.45</span>
+                        <span class="ref-add-hint">Add +</span>
+                    </button>
+                    <button type="submit" class="ref-row">
+                        <span class="sku">C</span>
+                        <span class="ref-price">£0.20</span>
+                        <span class="ref-noffer">No offer</span>
+                        <span class="ref-add-hint">Add +</span>
+                    </button>
+                    <button type="submit" class="ref-row">
+                        <span class="sku">D</span>
+                        <span class="ref-price">£0.15</span>
+                        <span class="ref-noffer">No offer</span>
+                        <span class="ref-add-hint">Add +</span>
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script src="./mockups.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mockup B — Receipt-centric</title>
+    <link rel="stylesheet" href="../../src/BrightPay.TakeHome.Web/wwwroot/app.css">
+    <link rel="stylesheet" href="./mockups.css">
+    <style>
+        /* Layout B: single column, mobile-first. The basket IS the receipt —
+         * scan bar on top, receipt body as the hero, total anchored at the
+         * bottom. The price list is demoted into a <details> reference. */
+        .receipt {
+            inline-size: min(100%, 28rem);
+            margin-inline: auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .receipt .scan-form {
+            position: sticky;
+            inset-block-start: var(--space-sm);
+            z-index: 1;
+            padding: var(--space-md);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .receipt .panel-body {
+            padding-inline: var(--space-md);
+        }
+
+        .ref-details summary {
+            cursor: pointer;
+            padding-block: var(--space-sm);
+            font-weight: 700;
+        }
+
+        .ref-details[open] summary {
+            margin-block-end: var(--space-sm);
+        }
+    </style>
+</head>
+<body data-default-state="added" data-empty-hint="Scan a SKU to start the sale.">
+    <div class="mockup-bar">
+        <h1>Mockup B — Receipt-centric</h1>
+        <span class="mockup-note">Single column, mobile-first. The basket reads top-to-bottom like a till receipt.</span>
+    </div>
+
+    <main class="mockup-shell">
+        <div class="receipt">
+            <form class="scan-form" aria-describedby="scan-status-b">
+                <div class="field">
+                    <label for="scan-b">Scan SKU</label>
+                    <input id="scan-b" name="sku" data-scan autocomplete="off" maxlength="1" placeholder="e.g. A">
+                </div>
+                <button type="submit" class="btn btn-primary">Add</button>
+            </form>
+            <p class="hint" id="scan-status-b" data-region="status" aria-live="assertive"></p>
+            <div data-region="alert"></div>
+
+            <section class="panel" aria-labelledby="basket-hb">
+                <div class="panel-head">
+                    <h2 id="basket-hb">Current sale</h2>
+                    <p data-region="count"></p>
+                </div>
+                <div class="panel-body" data-region="basket"></div>
+                <div class="totals" data-region="totals" aria-live="polite"></div>
+                <div class="panel-body" style="display:flex; gap:var(--space-md);">
+                    <button type="button" class="btn btn-danger" data-action style="flex:1">Clear</button>
+                    <button type="button" class="btn btn-primary" data-action style="flex:2">Checkout</button>
+                </div>
+            </section>
+
+            <details class="ref-details panel">
+                <summary class="panel-head">Price list &amp; offers</summary>
+                <div class="panel-body">
+                    <table class="price-list">
+                        <caption>All prices in GBP (£).</caption>
+                        <thead><tr><th scope="col">SKU</th><th scope="col">Unit</th><th scope="col">Offer</th></tr></thead>
+                        <tbody>
+                            <tr><td class="sku">A</td><td class="amount">£0.50</td><td><span class="offer-badge">3 for £1.30</span></td></tr>
+                            <tr><td class="sku">B</td><td class="amount">£0.30</td><td><span class="offer-badge">2 for £0.45</span></td></tr>
+                            <tr><td class="sku">C</td><td class="amount">£0.20</td><td>—</td></tr>
+                            <tr><td class="sku">D</td><td class="amount">£0.15</td><td>—</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+    </main>
+
+    <script src="./mockups.js"></script>
+</body>
+</html>

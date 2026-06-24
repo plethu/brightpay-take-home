@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mockup C — Keypad grid</title>
+    <link rel="stylesheet" href="../../src/BrightPay.TakeHome.Web/wwwroot/app.css">
+    <link rel="stylesheet" href="./mockups.css">
+    <style>
+        /* Layout C: physical-till keypad. Tappable SKU tiles are the primary add
+         * mechanism — no typing — with the basket and total beside them. A text
+         * scan field is kept as the keyboard / no-JS fallback so the tiles are an
+         * enhancement, never the only way in. */
+        .till-c {
+            display: grid;
+            grid-template-columns: 1fr minmax(18rem, 24rem);
+            gap: var(--space-xl);
+            align-items: start;
+        }
+
+        @media (width <= 48rem) {
+            .till-c {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+            gap: var(--space-md);
+        }
+
+        .tile {
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+            gap: var(--space-xs);
+            min-block-size: 6rem;
+            padding: var(--space-lg);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            color: var(--color-text);
+            text-align: start;
+            cursor: pointer;
+            transition: transform var(--motion-fast) var(--easing-standard),
+                border-color var(--motion-fast) var(--easing-standard);
+        }
+
+        .tile:hover {
+            border-color: var(--color-accent);
+        }
+
+        .tile:active {
+            transform: translateY(1px);
+        }
+
+        .tile .tile-sku {
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+        }
+
+        .tile .tile-price {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body data-default-state="added" data-empty-hint="Tap a SKU tile to start.">
+    <div class="mockup-bar">
+        <h1>Mockup C — Keypad grid</h1>
+        <span class="mockup-note">Tap a SKU tile to add. Most “physical till”; text scan kept as fallback.</span>
+    </div>
+
+    <main class="mockup-shell">
+        <div class="till-c">
+            <!-- LEFT: keypad + fallback scan -->
+            <section aria-labelledby="keypad-h">
+                <div class="panel-head" style="border:0; padding-inline:0;">
+                    <h2 id="keypad-h">Add item</h2>
+                    <p>Tap a SKU, or type one below.</p>
+                </div>
+                <div class="keypad" role="group" aria-label="SKU keypad">
+                    <button type="submit" class="tile"><span class="tile-sku">A</span><span class="tile-price">£0.50</span><span class="offer-badge">3 for £1.30</span></button>
+                    <button type="submit" class="tile"><span class="tile-sku">B</span><span class="tile-price">£0.30</span><span class="offer-badge">2 for £0.45</span></button>
+                    <button type="submit" class="tile"><span class="tile-sku">C</span><span class="tile-price">£0.20</span><span class="line-meta">No offer</span></button>
+                    <button type="submit" class="tile"><span class="tile-sku">D</span><span class="tile-price">£0.15</span><span class="line-meta">No offer</span></button>
+                </div>
+
+                <div data-region="alert" style="margin-block-start:var(--space-xl);"></div>
+
+                <form class="scan-form" style="margin-block-start:var(--space-xl);" aria-describedby="scan-status-c">
+                    <div class="field">
+                        <label for="scan-c">Or type a SKU (fallback)</label>
+                        <input id="scan-c" name="sku" data-scan autocomplete="off" maxlength="1" placeholder="e.g. A">
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Add</button>
+                </form>
+                <p class="hint" id="scan-status-c" data-region="status" aria-live="assertive"></p>
+            </section>
+
+            <!-- RIGHT: basket + total -->
+            <section class="panel" aria-labelledby="basket-hc">
+                <div class="panel-head">
+                    <h2 id="basket-hc">Basket</h2>
+                    <p data-region="count"></p>
+                </div>
+                <div class="panel-body" data-region="basket"></div>
+                <div class="totals" data-region="totals" aria-live="polite"></div>
+                <div class="panel-body" style="display:flex; gap:var(--space-md); justify-content:flex-end;">
+                    <button type="button" class="btn btn-danger" data-action>Clear basket</button>
+                    <button type="button" class="btn btn-primary" data-action>Checkout</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="./mockups.js"></script>
+</body>
+</html>

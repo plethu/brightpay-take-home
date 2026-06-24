@@ -1,0 +1,195 @@
+/*
+ * Shared behaviour for the checkout-till mockups.
+ *
+ * PROCESS ARTIFACT, not production code. Each mockup HTML renders ONE till and
+ * declares region placeholders (data-region="..."); this script fills them for
+ * the selected simulated state and wires the floating dev-tools panel that lets
+ * a reviewer flip between states. The three layouts share this so the basket,
+ * totals, savings, and error rendering stay identical across A/B/C.
+ *
+ * Classic script (not a module) so it loads over file:// without CORS fuss.
+ */
+(function () {
+    "use strict";
+
+    // SPEC pricing, in pence. Offers are the only type the kata defines: buy n
+    // for a fixed price.
+    const CATALOG = {
+        A: { unit: 50, offer: { label: "3 for £1.30", n: 3, price: 130 } },
+        B: { unit: 30, offer: { label: "2 for £0.45", n: 2, price: 45 } },
+        C: { unit: 20, offer: null },
+        D: { unit: 15, offer: null },
+    };
+
+    const gbp = (pence) => "£" + (pence / 100).toFixed(2);
+
+    // Build a basket line, applying the multi-buy offer as many times as it fits.
+    function line(sku, qty) {
+        const c = CATALOG[sku];
+        if (c.offer && qty >= c.offer.n) {
+            const times = Math.floor(qty / c.offer.n);
+            const rem = qty % c.offer.n;
+            const base = qty * c.unit;
+            const linePence = times * c.offer.price + rem * c.unit;
+            return {
+                sku, qty, unit: c.unit, linePence,
+                offer: { label: c.offer.label, times, basePence: base, savingPence: base - linePence },
+            };
+        }
+        return { sku, qty, unit: c.unit, linePence: qty * c.unit, offer: null };
+    }
+
+    // The four reachable states from scratch/05-design.md. "added" doubles as the
+    // running-total-with-offers state.
+    const STATES = {
+        empty: { label: "Empty basket", lines: [], scan: "", error: null, status: "" },
+        added: {
+            label: "Item added",
+            lines: [line("A", 3), line("B", 2), line("C", 1), line("D", 1)],
+            scan: "", error: null, status: "Added A. 3 of A in basket.",
+        },
+        error: {
+            label: "Validation error",
+            lines: [line("C", 1)],
+            scan: "Z",
+            error: "<strong>“Z” isn’t a known SKU.</strong> Check the price list and try again.",
+            status: "",
+        },
+    };
+
+    const STATE_ORDER = ["empty", "added", "error"];
+
+    function renderBasket(state, emptyHint) {
+        if (state.lines.length === 0) {
+            return `<div class="empty-state"><strong>No items yet</strong>${emptyHint}</div>`;
+        }
+        const items = state.lines.map((l) => {
+            const grouped = l.offer ? " offer-group" : "";
+            const badge = l.offer
+                ? `<span class="offer-badge">${l.offer.label} applied ×${l.offer.times}</span>`
+                : "";
+            const meta = l.offer
+                ? `<span class="line-meta saving"><span>was ${gbp(l.offer.basePence)}</span><span class="amount">−${gbp(l.offer.savingPence)}</span></span>`
+                : `<span class="line-meta">${gbp(l.unit)} each</span>`;
+            return `<li class="basket-line${grouped}">
+                <div class="line-main">
+                    <span class="line-title"><span class="sku">${l.sku}</span> × ${l.qty}</span>
+                    ${badge}${meta}
+                </div>
+                <span class="amount">${gbp(l.linePence)}</span>
+                <form><button type="submit" class="btn btn-quiet" aria-label="Remove ${l.sku}">Remove</button></form>
+            </li>`;
+        }).join("");
+        return `<ul class="basket">${items}</ul>`;
+    }
+
+    function renderTotals(state) {
+        const sub = state.lines.reduce((s, l) => s + (l.offer ? l.offer.basePence : l.linePence), 0);
+        const sav = state.lines.reduce((s, l) => s + (l.offer ? l.offer.savingPence : 0), 0);
+        const total = state.lines.reduce((s, l) => s + l.linePence, 0);
+        const rows = sav > 0
+            ? `<div class="totals-row"><span>Subtotal</span><span class="amount">${gbp(sub)}</span></div>
+               <div class="totals-row totals-saving"><span>Offer savings</span><span class="amount">−${gbp(sav)}</span></div>`
+            : "";
+        return `${rows}<div class="totals-grand"><span class="label">Total</span><span class="amount">${gbp(total)}</span></div>`;
+    }
+
+    function countLabel(state) {
+        if (state.lines.length === 0) return "";
+        const items = state.lines.reduce((s, l) => s + l.qty, 0);
+        const lines = state.lines.length;
+        return `${lines} line${lines === 1 ? "" : "s"} · ${items} item${items === 1 ? "" : "s"}`;
+    }
+
+    function apply(name) {
+        const state = STATES[name];
+        const emptyHint = document.body.dataset.emptyHint || "Scan a SKU to start the transaction.";
+
+        document.querySelectorAll('[data-region="basket"]').forEach((el) => {
+            el.innerHTML = renderBasket(state, emptyHint);
+        });
+        document.querySelectorAll('[data-region="totals"]').forEach((el) => {
+            el.innerHTML = renderTotals(state);
+        });
+        document.querySelectorAll('[data-region="alert"]').forEach((el) => {
+            el.innerHTML = state.error ? `<p class="banner-error" role="alert"><span>${state.error}</span></p>` : "";
+        });
+        document.querySelectorAll('[data-region="status"]').forEach((el) => {
+            el.textContent = state.status;
+        });
+        document.querySelectorAll('[data-region="count"]').forEach((el) => {
+            el.textContent = countLabel(state);
+        });
+        document.querySelectorAll("[data-scan]").forEach((el) => {
+            el.value = state.scan;
+            if (state.scan && state.error) {
+                el.setAttribute("aria-invalid", "true");
+            } else {
+                el.removeAttribute("aria-invalid");
+            }
+        });
+        // Clear / checkout are meaningless on an empty basket.
+        document.querySelectorAll("[data-action]").forEach((el) => {
+            el.disabled = name === "empty";
+        });
+        document.querySelectorAll("[data-state-option]").forEach((r) => {
+            r.checked = r.value === name;
+        });
+    }
+
+    function toggleTheme(button) {
+        const root = document.documentElement;
+        const dark = root.getAttribute("data-theme") === "dark";
+        root.setAttribute("data-theme", dark ? "light" : "dark");
+        button.setAttribute("aria-pressed", String(!dark));
+    }
+
+    function mountDevtools(active) {
+        const options = STATE_ORDER.map((k) =>
+            `<label class="devtools-radio">
+                <input type="radio" name="mock-state" value="${k}" data-state-option ${k === active ? "checked" : ""}>
+                ${STATES[k].label}
+            </label>`).join("");
+
+        const panel = document.createElement("aside");
+        panel.className = "devtools";
+        panel.setAttribute("aria-label", "Mockup dev tools");
+        panel.innerHTML = `
+            <p class="devtools-title">Mockup dev tools <span class="devtools-tag">not product UI</span></p>
+            <button type="button" class="btn btn-quiet devtools-collapse" data-collapse aria-expanded="true">Hide</button>
+            <fieldset class="devtools-group">
+                <legend>Simulate state</legend>
+                ${options}
+            </fieldset>
+            <button type="button" class="btn btn-secondary devtools-theme" data-theme-toggle aria-pressed="false">Toggle theme</button>`;
+        document.body.appendChild(panel);
+
+        panel.querySelectorAll("[data-state-option]").forEach((r) => {
+            r.addEventListener("change", () => apply(r.value));
+        });
+        panel.querySelector("[data-theme-toggle]").addEventListener("click", (e) => toggleTheme(e.currentTarget));
+        panel.querySelector("[data-collapse]").addEventListener("click", (e) => {
+            const collapsed = panel.getAttribute("data-collapsed") === "true";
+            panel.setAttribute("data-collapsed", String(!collapsed));
+            e.currentTarget.setAttribute("aria-expanded", String(collapsed));
+            e.currentTarget.textContent = collapsed ? "Hide" : "Show";
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // ?state=empty|added|error overrides the per-mockup default, so a state is
+        // shareable/bookmarkable (and screenshot-able) without touching markup.
+        const params = new URLSearchParams(location.search);
+        const requested = params.get("state");
+        const active = (requested && STATES[requested])
+            ? requested
+            : (document.body.dataset.defaultState || "added");
+        // ?theme=dark|light is handy for screenshotting both schemes headlessly.
+        const theme = params.get("theme");
+        if (theme === "dark" || theme === "light") {
+            document.documentElement.setAttribute("data-theme", theme);
+        }
+        mountDevtools(active);
+        apply(active);
+    });
+})();

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Checkout till — mockup gallery</title>
+    <link rel="stylesheet" href="../../src/BrightPay.TakeHome.Web/wwwroot/app.css">
+    <link rel="stylesheet" href="./mockups.css">
+    <style>
+        .gallery {
+            display: grid;
+            gap: var(--space-lg);
+        }
+
+        .gallery a.panel {
+            display: block;
+            padding-block: var(--space-lg);
+            padding-inline: var(--space-lg);
+            color: inherit;
+            text-decoration: none;
+            transition: border-color var(--motion-fast) var(--easing-standard);
+        }
+
+        .gallery a.panel:hover {
+            border-color: var(--color-accent);
+        }
+
+        .gallery h2 {
+            font-size: var(--font-size-lg);
+        }
+
+        .gallery p {
+            margin-block-start: var(--space-xs);
+            color: var(--color-text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-bar">
+        <h1>Checkout till — mockup gallery</h1>
+        <span class="mockup-note">Three interaction models for the cashier till. See scratch/05-design.md for the why.</span>
+        <button type="button" class="btn btn-secondary mockup-spacer" id="theme-toggle" aria-pressed="false">
+            Toggle theme
+        </button>
+    </div>
+
+    <main class="mockup-shell">
+        <section class="page" style="max-inline-size:var(--measure-prose); margin-block-end:var(--space-2xl);">
+            <p class="lead">
+                Same data in every mockup (SPEC pricing, GBP). Each renders one till; the floating
+                <strong>dev-tools panel</strong> (bottom-right, marked “not product UI”) switches
+                between the reachable states — empty basket, item added with offers, and a validation
+                error — and toggles the theme. State and theme are also URL-driven
+                (<code>?state=error</code>, <code>?theme=dark</code>) so a given view is shareable.
+                All three link the real <code>wwwroot/app.css</code> tokens, so light/dark and the
+                savings/offer colours are the genuine article.
+            </p>
+        </section>
+
+        <div class="gallery">
+            <a class="panel" href="./a-two-column-till.html">
+                <h2>A — Two-column till</h2>
+                <p>Operator console: scan + persistent price-list reference on the left, basket and a
+                   sticky total on the right. Best when the SKU list is genuinely consulted.</p>
+            </a>
+            <a class="panel" href="./b-receipt.html">
+                <h2>B — Receipt-centric</h2>
+                <p>Single column, mobile-first. The basket reads top-to-bottom like a till receipt
+                   with the total anchored at the bottom; price list tucked into a reference panel.</p>
+            </a>
+            <a class="panel" href="./c-keypad-grid.html">
+                <h2>C — Keypad grid</h2>
+                <p>Tappable SKU tiles (price + offer on each face) as the primary add mechanism;
+                   text scan field retained as the keyboard / no-JS fallback. Most “physical till”.</p>
+            </a>
+            <a class="panel" href="./d-receipt-rail.html">
+                <h2>D — Receipt + reference rail (converged)</h2>
+                <p>B's vertical scan→total flow with a <strong>sticky total</strong> so the hero never
+                   scrolls away, plus a persistent price-list rail whose rows double as add controls
+                   (A's always-on reference + C's tap-to-add). Right IA, generic SaaS skin.</p>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const root = document.documentElement;
+        document.getElementById("theme-toggle").addEventListener("click", (e) => {
+            const dark = root.getAttribute("data-theme") === "dark";
+            root.setAttribute("data-theme", dark ? "light" : "dark");
+            e.currentTarget.setAttribute("aria-pressed", String(!dark));
+        });
+    </script>
+</body>
+</html>

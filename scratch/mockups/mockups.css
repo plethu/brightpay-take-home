@@ -1,0 +1,471 @@
+/*
+ * Shared component atoms for the checkout-till mockups.
+ *
+ * These are PROCESS ARTIFACTS, not production CSS. The rule I'm holding myself
+ * to: every value here resolves to a token defined in
+ * ../../src/BrightPay.TakeHome.Web/wwwroot/app.css. No new raw constants. If a
+ * component can't be dressed from the existing tokens, that's a finding about
+ * the token set (see scratch/05-design.md), not a licence to hard-code.
+ *
+ * Layout-specific grids live in each mockup's inline <style>; this file is the
+ * common vocabulary (buttons, price list, basket lines, offer badge, total,
+ * error banner) so the three layouts stay visually coherent.
+ */
+
+/* Mockup chrome ------------------------------------------------------------ */
+
+.mockup-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-md);
+    padding-block: var(--space-md);
+    padding-inline: var(--space-page);
+    border-block-end: var(--border-width) solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.mockup-bar h1 {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+}
+
+.mockup-bar .mockup-note {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.mockup-bar .mockup-spacer {
+    margin-inline-start: auto;
+}
+
+.mockup-shell {
+    inline-size: min(100%, var(--measure-page));
+    margin-inline: auto;
+    padding-block: var(--space-page);
+    padding-inline: var(--space-page);
+}
+
+/* Floating dev-tools panel ------------------------------------------------- */
+
+/* Deliberately styled to read as tooling, NOT product chrome: pinned to a
+ * corner, mono label, "not product UI" tag. It drives which simulated state the
+ * single rendered till shows. JS-only is fine here — it's a mockup affordance,
+ * not part of the no-JS product path. */
+.devtools {
+    position: fixed;
+    inset-block-end: var(--space-lg);
+    inset-inline-end: var(--space-lg);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    inline-size: min(15rem, calc(100vw - 2 * var(--space-lg)));
+    padding: var(--space-lg);
+    border: var(--border-width) solid var(--color-accent);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.devtools-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.devtools-tag {
+    padding-block: 0.05rem;
+    padding-inline: var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklch, var(--color-accent) 16%, var(--color-surface));
+    color: var(--color-text-muted);
+    font-weight: 400;
+}
+
+.devtools-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    border: 0;
+    padding: 0;
+}
+
+.devtools-group legend {
+    margin-block-end: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.devtools-radio {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.devtools-collapse {
+    position: absolute;
+    inset-block-start: var(--space-sm);
+    inset-inline-end: var(--space-sm);
+}
+
+/* Collapsed: shrink to just the title row + reopen affordance. */
+.devtools[data-collapsed="true"] .devtools-group,
+.devtools[data-collapsed="true"] .devtools-theme {
+    display: none;
+}
+
+/* Panels ------------------------------------------------------------------- */
+
+.panel {
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.panel-head {
+    padding-block: var(--space-md);
+    padding-inline: var(--space-lg);
+    border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.panel-head h2 {
+    font-size: var(--font-size-md);
+    font-weight: 700;
+}
+
+.panel-head p {
+    margin-block-start: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.panel-body {
+    padding-block: var(--space-lg);
+    padding-inline: var(--space-lg);
+}
+
+/* Scan form ---------------------------------------------------------------- */
+
+.scan-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: end;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    flex: 1 1 8rem;
+}
+
+.field label {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.field input {
+    padding-block: var(--space-sm);
+    padding-inline: var(--space-md);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-canvas);
+    color: var(--color-text);
+}
+
+.hint {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* Buttons ------------------------------------------------------------------ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding-block: var(--space-sm);
+    padding-inline: var(--space-lg);
+    border: var(--border-width) solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform var(--motion-fast) var(--easing-standard),
+        background var(--motion-fast) var(--easing-standard);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-text);
+}
+
+.btn-secondary {
+    border-color: var(--color-border);
+}
+
+/* Destructive actions carry a danger outline so risk reads without colour
+ * being the only signal — the word stays "Remove" / "Clear basket". */
+.btn-danger {
+    border-color: var(--color-danger-border);
+    color: var(--color-danger-text);
+    background: var(--color-danger-surface);
+}
+
+.btn-quiet {
+    padding-inline: var(--space-md);
+    background: transparent;
+    border-color: transparent;
+    color: var(--color-text-muted);
+}
+
+.btn-quiet:hover {
+    color: var(--color-text);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Price-list reference ----------------------------------------------------- */
+
+.price-list {
+    inline-size: 100%;
+    border-collapse: collapse;
+}
+
+.price-list caption {
+    text-align: start;
+    margin-block-end: var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.price-list th,
+.price-list td {
+    padding-block: var(--space-sm);
+    padding-inline: var(--space-sm);
+    border-block-end: var(--border-width) solid var(--color-border);
+    text-align: start;
+    vertical-align: baseline;
+}
+
+.price-list th {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+}
+
+.price-list .sku {
+    font-family: var(--font-mono);
+    font-weight: 700;
+}
+
+.price-list .amount {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Offer badge -------------------------------------------------------------- */
+
+/* Reads as "badge + text", never colour alone. Used both in the price list and
+ * against grouped basket lines. */
+.offer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding-block: 0.1rem;
+    padding-inline: var(--space-sm);
+    border: var(--border-width) solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklch, var(--color-accent) 12%, var(--color-surface));
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    inline-size: fit-content;
+}
+
+.offer-badge::before {
+    content: "★";
+    color: var(--color-accent);
+}
+
+/* Basket ------------------------------------------------------------------- */
+
+.basket {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    list-style: none;
+    padding: 0;
+}
+
+.basket-line {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: var(--space-md);
+    padding-block: var(--space-sm);
+    border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.basket-line .line-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.basket-line .line-title {
+    font-weight: 700;
+}
+
+.basket-line .line-title .sku {
+    font-family: var(--font-mono);
+}
+
+.basket-line .line-meta {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.basket-line .amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+/* Lines an offer groups together get a quiet accent rail so the relationship
+ * between the offer and its items is visible at a glance. */
+.offer-group {
+    padding-inline-start: var(--space-md);
+    border-inline-start: var(--focus-ring-width) solid var(--color-accent);
+}
+
+.offer-group .saving {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-block-start: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* The money-off figure uses the success token; the leading "−" and "−£" keep
+ * the meaning legible without relying on colour. */
+.offer-group .saving .amount {
+    color: var(--color-success-text);
+    font-weight: 700;
+}
+
+/* Totals ------------------------------------------------------------------- */
+
+.totals {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-block: var(--space-lg);
+    padding-inline: var(--space-lg);
+    border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.totals-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.totals-row .amount {
+    font-variant-numeric: tabular-nums;
+}
+
+.totals-saving {
+    color: var(--color-success-text);
+}
+
+.totals-saving .amount {
+    color: var(--color-success-text);
+    font-weight: 700;
+}
+
+/* The hero number. Largest type on the page. */
+.totals-grand {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-block-start: var(--space-xs);
+}
+
+.totals-grand .label {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.totals-grand .amount {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Error banner ------------------------------------------------------------- */
+
+.banner-error {
+    display: flex;
+    align-items: start;
+    gap: var(--space-sm);
+    padding-block: var(--space-md);
+    padding-inline: var(--space-lg);
+    border: var(--border-width) solid var(--color-danger-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-danger-surface);
+    color: var(--color-danger-text);
+}
+
+.banner-error::before {
+    content: "!";
+    flex: 0 0 auto;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border-radius: 50%;
+    background: var(--color-danger-border);
+    color: var(--color-surface);
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.25rem;
+}
+
+/* Empty state -------------------------------------------------------------- */
+
+.empty-state {
+    padding-block: var(--space-2xl);
+    padding-inline: var(--space-lg);
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.empty-state strong {
+    display: block;
+    margin-block-end: var(--space-xs);
+    color: var(--color-text);
+    font-size: var(--font-size-lg);
+}
