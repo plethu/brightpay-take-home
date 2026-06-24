@@ -6,11 +6,14 @@ using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 using BrightPay.TakeHome.Core.Checkout.Operations;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Web;
+using BrightPay.TakeHome.Web.Components.Checkout;
 using BrightPay.TakeHome.Web.Components.Pages;
 using BrightPay.TakeHome.Web.Features.Checkout;
 using BrightPay.TakeHome.Web.Features.Checkout.Projection;
+using BrightPay.TakeHome.Web.Features.Checkout.Routing;
 using BrightPay.TakeHome.Web.Features.Checkout.State;
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -32,6 +35,10 @@ public sealed class CartPageTests : BunitContext
         Services.AddScoped<CheckoutBasketCookieStore>();
         Services.AddScoped<CheckoutViewProjector>();
         Services.AddSingleton<ICheckoutCatalogService>(new FakeCheckoutCatalogService());
+        BunitJSModuleInterop module = JSInterop.SetupModule("./Components/Pages/CheckoutPage.razor.js");
+        module.SetupVoid("initialize");
+        module.SetupVoid("dispose");
+        module.SetupVoid("pulseToast");
         _localizer = Services.GetRequiredService<IStringLocalizer<SharedResource>>();
     }
 
@@ -40,12 +47,57 @@ public sealed class CartPageTests : BunitContext
     {
         IRenderedComponent<CheckoutPage> component = Render<CheckoutPage>();
 
-        component.Find("h1").TextContent.Should().Be(_localizer["CartHeading"].Value);
+        component.FindAll(".checkout-title").Should().BeEmpty();
+        component.Find("#add-hd").TextContent.Should().Be(_localizer["CheckoutAddHeading"].Value);
+        component.Find("#sale-hd").TextContent.Should().Be(_localizer["CheckoutCurrentSale"].Value);
         component.Markup.Should().Contain(_localizer["SkuName_A"].Value);
         component.Markup.Should().Contain("£0.50");
         component.Markup.Should().Contain(_localizer["CheckoutOffer_QuantityForFixedPrice", 3, "£1.30"].Value);
         component.Markup.Should().Contain(_localizer["CheckoutEmptyTitle"].Value);
     }
+
+    [Fact]
+    public void AddPadStartsWithDisabledQuantityDecrement()
+    {
+        IRenderedComponent<AddPad> component =
+            Render<AddPad>(parameters => parameters
+            .Add(component => component.Catalog, CatalogViews));
+
+        component.Find("[data-qty-step='-1']").HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public void SingleItemReceiptLineUsesIconOnlyRemoveControl()
+    {
+        IRenderedComponent<QuantityStepper> component =
+            Render<QuantityStepper>(parameters => parameters
+            .Add(component => component.Sku, "A")
+            .Add(component => component.Name, _localizer["SkuName_A"].Value)
+            .Add(component => component.Quantity, 1));
+
+        AngleSharp.Dom.IElement removeButton = component.Find("[data-act='dec']");
+
+        removeButton.GetAttribute("aria-label").Should().Be(_localizer["CheckoutRemoveLineLabel", _localizer["SkuName_A"].Value].Value);
+        removeButton.TextContent.Should().NotContain(_localizer["CheckoutRemoveGlyph"].Value);
+        removeButton.QuerySelector("svg[aria-hidden='true']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void CheckoutRendersAddedToastFromFeedbackQuery()
+    {
+        NavigationManager navigation = Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo($"/cart?feedback={nameof(CheckoutFeedbackCode.Added)}&sku=A");
+
+        IRenderedComponent<CheckoutPage> component = Render<CheckoutPage>();
+
+        component.Find(".toast").TextContent.Should().Contain(_localizer["CheckoutToast_Added", _localizer["SkuName_A"].Value].Value);
+    }
+
+    private static readonly CheckoutCatalogItemView[] CatalogViews =
+    [
+        new("A", "Apple", "£0.50", "3 for £1.30"),
+        new("B", "Banana", "£0.30", "2 for £0.45"),
+    ];
 
     private sealed class FakeCheckoutCatalogService : ICheckoutCatalogService
     {

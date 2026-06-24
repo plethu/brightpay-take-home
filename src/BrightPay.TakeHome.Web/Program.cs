@@ -62,6 +62,7 @@ if (!app.Configuration.GetValue<bool>("DisableHttpsRedirection"))
 }
 
 app.UseRequestLocalization();
+app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

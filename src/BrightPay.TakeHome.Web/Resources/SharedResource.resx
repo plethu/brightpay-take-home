@@ -175,6 +175,15 @@
   <data name="CheckoutToast_Charged" xml:space="preserve">
     <value>Sale charged. The basket is ready for the next customer.</value>
   </data>
+  <data name="CheckoutToast_Added" xml:space="preserve">
+    <value>Added {0}.</value>
+  </data>
+  <data name="CheckoutToast_AddedQuantity" xml:space="preserve">
+    <value>Added {0} x {1} to the sale.</value>
+  </data>
+  <data name="CheckoutToast_AddedItems" xml:space="preserve">
+    <value>Added {0} items to the sale.</value>
+  </data>
   <data name="CheckoutToast_Cleared" xml:space="preserve">
     <value>Sale cleared.</value>
   </data>

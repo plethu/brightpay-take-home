@@ -1,6 +1,9 @@
 @page "/"
 @page "/cart"
+@rendermode InteractiveServer
 @using BrightPay.TakeHome.Core.Checkout.Basket
+@using BrightPay.TakeHome.Core.Checkout.Identifiers
+@using BrightPay.TakeHome.Core.Checkout.Operations
 @using BrightPay.TakeHome.Web.Components.Checkout
 @using BrightPay.TakeHome.Web.Features.Checkout
 @using BrightPay.TakeHome.Web.Features.Checkout.Projection
@@ -11,21 +14,22 @@
 @inject CheckoutViewProjector Projector
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IStringLocalizer<SharedResource> Localizer
-
-<PageTitle>@Localizer["AppName"]</PageTitle>
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 @if (_model is not null)
 {
-    <CheckoutToast Message="@Toast" />
+    <CheckoutToast Message="@Toast" IsLeaving="@_toastLeaving" OnDismiss="@DismissToast" />
 
-    <section class="checkout-page" aria-labelledby="page-title">
-        <div class="checkout-title">
-            <h1 id="page-title">@Localizer["CartHeading"]</h1>
-            <p>@Localizer["CartIntro"]</p>
-        </div>
-
+    <section class="checkout-page" data-checkout-page aria-label="@Localizer["AppName"]">
         <div class="till-e">
-            <AddPad Catalog="@_model.Catalog" ErrorMessage="@ErrorMessage" />
+            <AddPad Catalog="@_model.Catalog"
+                    ErrorMessage="@ErrorMessage"
+                    ErrorIsInvalid="@_errorIsInvalid"
+                    ErrorIsLeaving="@_errorLeaving"
+                    OnAddSku="@AddSkuAsync"
+                    OnAddManualSku="@AddManualSkuAsync"
+                    OnManualSkuChanged="@ClearErrorAsync" />
             <section class="sale-pane" aria-labelledby="sale-hd">
                 <div class="panel-head sale-head-line">
                     <h2 id="sale-hd">@Localizer["CheckoutCurrentSale"]</h2>
@@ -36,8 +40,8 @@
                         }
                     </span>
                 </div>
-                <Receipt Lines="@_model.Lines" IsEmpty="@_model.Totals.IsEmpty" />
-                <CheckoutTotals Totals="@_model.Totals" />
+                <Receipt Lines="@_model.Lines" IsEmpty="@_model.Totals.IsEmpty" OnIncrement="@IncrementAsync" OnDecrement="@DecrementAsync" />
+                <CheckoutTotals Totals="@_model.Totals" OnClear="@Clear" OnCharge="@Charge" />
             </section>
         </div>
     </section>
@@ -48,12 +52,31 @@
     public string? Error { get; set; }
 
     [SupplyParameterFromQuery(Name = "sku")]
-    public string? ErrorSku { get; set; }
+    public string? QuerySku { get; set; }
 
     [SupplyParameterFromQuery(Name = "feedback")]
     public string? Feedback { get; set; }
 
     private CheckoutViewModel? _model;
+    private CheckoutCatalogSnapshot? _catalog;
+    private IReadOnlyList<CheckoutCatalogItem> _catalogItems = [];
+    private BasketSnapshot _basket = BasketSnapshot.Empty;
+    private IJSObjectReference? _module;
+    private readonly Dictionary<string, ToastBatchLine> _addToastBatch = new(StringComparer.OrdinalIgnoreCase);
+    private CancellationTokenSource? _addToastDebounce;
+    private CancellationTokenSource? _toastDismiss;
+    private CancellationTokenSource? _errorClear;
+    private DateTimeOffset _lastAddToastAt = DateTimeOffset.MinValue;
+    private string? _toast;
+    private bool _toastLeaving;
+    private string? _errorMessage;
+    private bool _errorIsInvalid;
+    private bool _errorLeaving;
+
+    private static readonly TimeSpan ToastDebounceDelay = TimeSpan.FromMilliseconds(120);
+    private static readonly TimeSpan ToastDismissDelay = TimeSpan.FromMilliseconds(1800);
+    private static readonly TimeSpan ToastExitDelay = TimeSpan.FromMilliseconds(160);
+    private static readonly TimeSpan ErrorExitDelay = TimeSpan.FromMilliseconds(180);
 
     private CheckoutMutationErrorCode? ErrorCode =>
         Enum.TryParse(Error, ignoreCase: false, out CheckoutMutationErrorCode code) ? code : null;
@@ -61,29 +84,390 @@
     private CheckoutFeedbackCode? FeedbackCode =>
         Enum.TryParse(Feedback, ignoreCase: false, out CheckoutFeedbackCode code) ? code : null;
 
-    private string? ErrorMessage => ErrorCode switch
+    private string? ErrorMessage => _errorMessage;
+
+    private string? Toast => _toast;
+
+    protected override async Task OnInitializedAsync()
     {
-        CheckoutMutationErrorCode.EmptySku => Projector.ErrorMessage(BrightPay.TakeHome.Core.Checkout.Operations.CheckoutOperationError.EmptySku),
-        CheckoutMutationErrorCode.InvalidQuantity => Projector.ErrorMessage(BrightPay.TakeHome.Core.Checkout.Operations.CheckoutOperationError.InvalidQuantity),
-        CheckoutMutationErrorCode.UnknownSku => Projector.ErrorMessage(BrightPay.TakeHome.Core.Checkout.Operations.CheckoutOperationError.UnknownSku, ErrorSku),
-        CheckoutMutationErrorCode.EmptyBasket => Projector.ErrorMessage(BrightPay.TakeHome.Core.Checkout.Operations.CheckoutOperationError.EmptyBasket),
+        HttpContext? httpContext = HttpContextAccessor.HttpContext;
+        _basket = BasketStore.Read(httpContext);
+        _catalog = await CatalogService.LoadActiveCatalogAsync().ConfigureAwait(false);
+        _catalogItems = await CatalogService.LoadCatalogItemsAsync().ConfigureAwait(false);
+        Project();
+        _errorMessage = QueryErrorMessage();
+        _toast = QueryToast();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
+            "import",
+            "./Components/Pages/CheckoutPage.razor.js").ConfigureAwait(true);
+        await _module.InvokeVoidAsync("initialize").ConfigureAwait(true);
+    }
+
+    private async Task AddSkuAsync(CheckoutAddRequest request)
+    {
+        await ApplyAsync(() => CatalogService.AddAsync(_basket, request.Sku, request.Quantity), request).ConfigureAwait(true);
+    }
+
+    private async Task AddManualSkuAsync(CheckoutAddRequest request)
+    {
+        await ApplyAsync(() => CatalogService.AddAsync(_basket, request.Sku, request.Quantity), request).ConfigureAwait(true);
+    }
+
+    private async Task IncrementAsync(string skuText)
+    {
+        if (Sku.TryCreate(skuText) is not { } sku)
+        {
+            ApplyFailure(CheckoutOperationError.UnknownSku, skuText);
+            return;
+        }
+
+        await ApplyAsync(() => CatalogService.IncrementAsync(_basket, sku), showAddedToast: false).ConfigureAwait(true);
+    }
+
+    private async Task DecrementAsync(string skuText)
+    {
+        if (Sku.TryCreate(skuText) is not { } sku)
+        {
+            ApplyFailure(CheckoutOperationError.UnknownSku, skuText);
+            return;
+        }
+
+        await ApplyAsync(() => CatalogService.DecrementAsync(_basket, sku), showAddedToast: false).ConfigureAwait(true);
+    }
+
+    private void Clear()
+    {
+        ApplyResult(CatalogService.Clear(_basket), CheckoutFeedbackCode.Cleared);
+    }
+
+    private void Charge()
+    {
+        ApplyResult(CatalogService.Charge(_basket), CheckoutFeedbackCode.Charged);
+    }
+
+    private async Task ApplyAsync(
+        Func<Task<CheckoutOperationResult>> operation,
+        CheckoutAddRequest? addRequest = null,
+        bool showAddedToast = true)
+    {
+        CheckoutOperationResult result = await operation().ConfigureAwait(true);
+        ApplyResult(result, addRequest, showAddedToast ? CheckoutFeedbackCode.Added : null);
+    }
+
+    private void ApplyResult(CheckoutOperationResult result, CheckoutFeedbackCode? feedback)
+    {
+        ApplyResult(result, addRequest: null, feedback);
+    }
+
+    private void ApplyResult(CheckoutOperationResult result, CheckoutAddRequest? addRequest = null, CheckoutFeedbackCode? feedback = null)
+    {
+        if (!result.Succeeded)
+        {
+            ApplyFailure(result.Error, addRequest?.Sku);
+            return;
+        }
+
+        _basket = result.Basket;
+        Project();
+        _ = ClearErrorAsync();
+        switch (feedback)
+        {
+            case CheckoutFeedbackCode.Added when addRequest is not null:
+                QueueAddedToast(addRequest);
+                break;
+            case CheckoutFeedbackCode.Charged:
+                ShowToast(Localizer["CheckoutToast_Charged"].Value);
+                break;
+            case CheckoutFeedbackCode.Cleared:
+                ShowToast(Localizer["CheckoutToast_Cleared"].Value);
+                break;
+        }
+    }
+
+    private void ApplyFailure(CheckoutOperationError? error, string? skuText)
+    {
+        CancelToastTimers();
+        _errorMessage = Projector.ErrorMessage(error, skuText);
+        _errorIsInvalid = true;
+        _errorLeaving = false;
+        _toast = null;
+        _toastLeaving = false;
+    }
+
+    private void Project()
+    {
+        if (_catalog is null)
+        {
+            return;
+        }
+
+        _model = Projector.Project(_catalog, _catalogItems, _basket);
+    }
+
+    private string? QueryErrorMessage() => ErrorCode switch
+    {
+        CheckoutMutationErrorCode.EmptySku => Projector.ErrorMessage(CheckoutOperationError.EmptySku),
+        CheckoutMutationErrorCode.InvalidQuantity => Projector.ErrorMessage(CheckoutOperationError.InvalidQuantity),
+        CheckoutMutationErrorCode.UnknownSku => Projector.ErrorMessage(CheckoutOperationError.UnknownSku, QuerySku),
+        CheckoutMutationErrorCode.EmptyBasket => Projector.ErrorMessage(CheckoutOperationError.EmptyBasket),
         _ => null,
     };
 
-    private string? Toast => FeedbackCode switch
+    private string? QueryToast() => FeedbackCode switch
     {
+        CheckoutFeedbackCode.Added => AddedToast(QuerySku),
         CheckoutFeedbackCode.Charged => Localizer["CheckoutToast_Charged"].Value,
         CheckoutFeedbackCode.Cleared => Localizer["CheckoutToast_Cleared"].Value,
         _ => null,
     };
 
-    protected override async Task OnInitializedAsync()
+    private string? AddedToast(string? skuText)
     {
-        HttpContext? httpContext = HttpContextAccessor.HttpContext;
-        BasketSnapshot basket = BasketStore.Read(httpContext);
-        CheckoutCatalogSnapshot catalog = await CatalogService.LoadActiveCatalogAsync().ConfigureAwait(false);
-        IReadOnlyList<CheckoutCatalogItem> catalogItems = await CatalogService.LoadCatalogItemsAsync().ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(skuText))
+        {
+            return null;
+        }
 
-        _model = Projector.Project(catalog, catalogItems, basket);
+        string? name = _model?.Catalog.FirstOrDefault(item => string.Equals(item.Sku, skuText, StringComparison.OrdinalIgnoreCase))?.Name;
+        return Localizer["CheckoutToast_Added", name ?? skuText].Value;
     }
+
+    private async Task ClearErrorAsync()
+    {
+        _errorIsInvalid = false;
+        _errorClear?.Cancel();
+        _errorClear?.Dispose();
+
+        if (_errorMessage is null)
+        {
+            _errorLeaving = false;
+            return;
+        }
+
+        _errorLeaving = true;
+        CancellationTokenSource clear = new();
+        _errorClear = clear;
+
+        try
+        {
+            await Task.Delay(ErrorExitDelay, clear.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(_errorClear, clear))
+        {
+            _errorMessage = null;
+            _errorLeaving = false;
+            _errorClear = null;
+            await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+        }
+    }
+
+    private void QueueAddedToast(CheckoutAddRequest request)
+    {
+        string skuText = request.Sku;
+        if (string.IsNullOrWhiteSpace(skuText))
+        {
+            return;
+        }
+
+        string name = _model?.Catalog.FirstOrDefault(item => string.Equals(item.Sku, skuText, StringComparison.OrdinalIgnoreCase))?.Name ?? skuText;
+        if (_addToastBatch.TryGetValue(skuText, out ToastBatchLine? line))
+        {
+            _addToastBatch[skuText] = line with { Quantity = line.Quantity + request.Quantity };
+        }
+        else
+        {
+            _addToastBatch[skuText] = new ToastBatchLine(name, request.Quantity);
+        }
+
+        TimeSpan elapsed = DateTimeOffset.UtcNow - _lastAddToastAt;
+        bool visible = _toast is not null && !_toastLeaving;
+        if (!visible)
+        {
+            StartAddDebounce(ToastDebounceDelay);
+            return;
+        }
+
+        StartAddDebounce(elapsed >= ToastDebounceDelay ? TimeSpan.Zero : ToastDebounceDelay - elapsed);
+    }
+
+    private void StartAddDebounce(TimeSpan delay)
+    {
+        _addToastDebounce?.Cancel();
+        _addToastDebounce?.Dispose();
+        CancellationTokenSource debounce = new();
+        _addToastDebounce = debounce;
+        _ = FlushAddedToastAsync(debounce, delay);
+    }
+
+    private async Task FlushAddedToastAsync(CancellationTokenSource debounce, TimeSpan delay)
+    {
+        try
+        {
+            if (delay > TimeSpan.Zero)
+            {
+                await Task.Delay(delay, debounce.Token).ConfigureAwait(true);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(_addToastDebounce, debounce) || _addToastBatch.Count == 0)
+        {
+            return;
+        }
+
+        bool wasVisible = _toast is not null && !_toastLeaving;
+        _addToastDebounce = null;
+        _toastDismiss?.Cancel();
+        _toastDismiss?.Dispose();
+        _toast = AddedToast();
+        _toastLeaving = false;
+        _lastAddToastAt = DateTimeOffset.UtcNow;
+
+        CancellationTokenSource dismiss = new();
+        _toastDismiss = dismiss;
+        _ = HideToastAfterDelayAsync(dismiss);
+
+        await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+
+        if (wasVisible && _module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("pulseToast").ConfigureAwait(true);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+
+    private string AddedToast()
+    {
+        if (_addToastBatch.Count == 1)
+        {
+            ToastBatchLine line = _addToastBatch.Values.First();
+            return Localizer["CheckoutToast_AddedQuantity", line.Quantity, line.Name].Value;
+        }
+
+        int total = _addToastBatch.Values.Sum(line => line.Quantity);
+        return Localizer["CheckoutToast_AddedItems", total].Value;
+    }
+
+    private void ShowToast(string message)
+    {
+        _addToastDebounce?.Cancel();
+        _addToastDebounce?.Dispose();
+        _addToastDebounce = null;
+        _addToastBatch.Clear();
+        _toastDismiss?.Cancel();
+        _toastDismiss?.Dispose();
+        _toast = message;
+        _toastLeaving = false;
+
+        CancellationTokenSource dismiss = new();
+        _toastDismiss = dismiss;
+        _ = HideToastAfterDelayAsync(dismiss);
+    }
+
+    private async Task HideToastAfterDelayAsync(CancellationTokenSource dismiss)
+    {
+        try
+        {
+            await Task.Delay(ToastDismissDelay, dismiss.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await HideToastAsync(dismiss).ConfigureAwait(true);
+    }
+
+    private Task DismissToast()
+    {
+        CancellationTokenSource dismiss = new();
+        _toastDismiss?.Cancel();
+        _toastDismiss?.Dispose();
+        _toastDismiss = dismiss;
+        return HideToastAsync(dismiss);
+    }
+
+    private async Task HideToastAsync(CancellationTokenSource dismiss)
+    {
+        if (!ReferenceEquals(_toastDismiss, dismiss) || _toast is null)
+        {
+            return;
+        }
+
+        _toastLeaving = true;
+        await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+        try
+        {
+            await Task.Delay(ToastExitDelay, dismiss.Token).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(_toastDismiss, dismiss))
+        {
+            _toast = null;
+            _toastLeaving = false;
+            _toastDismiss = null;
+            _addToastBatch.Clear();
+            await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+        }
+    }
+
+    private void CancelToastTimers()
+    {
+        _addToastDebounce?.Cancel();
+        _addToastDebounce?.Dispose();
+        _addToastDebounce = null;
+        _toastDismiss?.Cancel();
+        _toastDismiss?.Dispose();
+        _toastDismiss = null;
+        _addToastBatch.Clear();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        CancelToastTimers();
+        _errorClear?.Cancel();
+        _errorClear?.Dispose();
+
+        if (_module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _module.InvokeVoidAsync("dispose").ConfigureAwait(false);
+            await _module.DisposeAsync().ConfigureAwait(false);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    private sealed record ToastBatchLine(string Name, int Quantity);
 }

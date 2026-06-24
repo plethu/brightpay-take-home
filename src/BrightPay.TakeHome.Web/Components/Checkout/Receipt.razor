@@ -1,7 +1,7 @@
 @using BrightPay.TakeHome.Web.Features.Checkout.Projection
 @inject IStringLocalizer<SharedResource> Localizer
 
-<div class="sale-body">
+<div class="sale-body" data-region="basket">
     @if (IsEmpty)
     {
         <div class="empty-state">
@@ -14,7 +14,7 @@
         <ul class="sale-list">
             @foreach (CheckoutReceiptLineView line in Lines)
             {
-                <ReceiptLine Line="@line" />
+                <ReceiptLine Line="@line" OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />
             }
         </ul>
     }
@@ -26,4 +26,10 @@
 
     [Parameter]
     public bool IsEmpty { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnIncrement { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDecrement { get; set; }
 }

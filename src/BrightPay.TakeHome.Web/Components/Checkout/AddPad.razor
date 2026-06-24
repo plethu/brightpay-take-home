@@ -9,17 +9,28 @@
             <div class="qty">
                 <label for="qty">@Localizer["CheckoutQuantityLabel"]</label>
                 <div class="qty-control">
-                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]" data-qty-step="-1">-</button>
-                    <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" value="1">
+                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]" data-qty-step="-1" disabled>-</button>
+                    <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" @bind="Quantity">
                     <button type="button" class="qty-step" aria-label="@Localizer["CheckoutIncreaseQuantity"]" data-qty-step="1">+</button>
                 </div>
             </div>
         </div>
 
+        <div class="manual">
+            <div class="scan-form">
+                <div class="field">
+                    <label for="scan">@Localizer["CheckoutScanLabel"]</label>
+                    <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1" placeholder="@Localizer["CheckoutScanPlaceholder"]" aria-describedby="scan-alert" aria-invalid="@(ErrorIsInvalid ? "true" : "false")" value="@ManualSku" @oninput="@HandleManualSkuInput">
+                </div>
+                <button type="submit" class="btn btn-secondary" @onclick="@AddManualSkuAsync" @onclick:preventDefault="true">@Localizer["CheckoutAddButton"]</button>
+            </div>
+            <CheckoutAlert Message="@ErrorMessage" IsLeaving="@ErrorIsLeaving" />
+        </div>
+
         <div class="sku-pad" role="group" aria-label="@Localizer["CheckoutSkuPadLabel"]">
             @foreach (CheckoutCatalogItemView item in Catalog)
             {
-                <button type="submit" name="sku" value="@item.Sku" class="sku-tile">
+                <button type="submit" name="sku" value="@item.Sku" class="sku-tile" @onclick="@(() => AddSkuAsync(item.Sku))" @onclick:preventDefault="true">
                     <span class="tile-name">@item.Name <span class="tile-sku">@item.Sku</span></span>
                     <span class="tile-price">@item.UnitPrice</span>
                     @if (item.OfferLabel is not null)
@@ -28,17 +39,6 @@
                     }
                 </button>
             }
-        </div>
-
-        <div class="manual">
-            <div class="scan-form">
-                <div class="field">
-                    <label for="scan">@Localizer["CheckoutScanLabel"]</label>
-                    <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1" placeholder="@Localizer["CheckoutScanPlaceholder"]" aria-describedby="scan-alert" aria-invalid="@(ErrorMessage is not null ? "true" : "false")">
-                </div>
-                <button type="submit" class="btn btn-secondary">@Localizer["CheckoutAddButton"]</button>
-            </div>
-            <CheckoutAlert Message="@ErrorMessage" />
         </div>
     </EditForm>
 </section>
@@ -51,4 +51,42 @@
 
     [Parameter]
     public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public bool ErrorIsInvalid { get; set; }
+
+    [Parameter]
+    public bool ErrorIsLeaving { get; set; }
+
+    [Parameter]
+    public EventCallback<CheckoutAddRequest> OnAddSku { get; set; }
+
+    [Parameter]
+    public EventCallback<CheckoutAddRequest> OnAddManualSku { get; set; }
+
+    [Parameter]
+    public EventCallback OnManualSkuChanged { get; set; }
+
+    private int Quantity { get; set; } = 1;
+
+    private string? ManualSku { get; set; }
+
+    private async Task HandleManualSkuInput(ChangeEventArgs args)
+    {
+        ManualSku = args.Value?.ToString();
+        if (ErrorIsInvalid)
+        {
+            await OnManualSkuChanged.InvokeAsync().ConfigureAwait(true);
+        }
+    }
+
+    private Task AddSkuAsync(string sku)
+    {
+        return OnAddSku.InvokeAsync(new CheckoutAddRequest(sku, Quantity));
+    }
+
+    private Task AddManualSkuAsync()
+    {
+        return OnAddManualSku.InvokeAsync(new CheckoutAddRequest(ManualSku ?? string.Empty, Quantity));
+    }
 }

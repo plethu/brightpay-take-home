@@ -6,25 +6,6 @@
     color: var(--color-text);
 }
 
-.app-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-lg);
-    min-block-size: 4rem;
-    padding-block: var(--space-md);
-    padding-inline: var(--space-page);
-    border-block-end: var(--border-width) solid var(--color-border);
-    background: var(--color-surface);
-}
-
-.brand {
-    color: var(--color-text);
-    font-size: var(--font-size-md);
-    font-weight: 700;
-    text-decoration: none;
-}
-
 .app-main {
     inline-size: min(100%, var(--measure-page));
     margin-inline: auto;
@@ -64,11 +45,4 @@
     color: inherit;
     cursor: pointer;
     font: inherit;
-}
-
-@media (width <= 36rem) {
-    .app-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
 }

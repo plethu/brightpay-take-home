@@ -1,11 +1,14 @@
 <div data-region="alert" id="scan-alert">
     @if (!string.IsNullOrWhiteSpace(Message))
     {
-        <p class="banner-error" role="alert"><span>@Message</span></p>
+        <p class="banner-error @(IsLeaving ? "banner-error-exit" : null)" role="alert"><span>@Message</span></p>
     }
 </div>
 
 @code {
     [Parameter]
     public string? Message { get; set; }
+
+    [Parameter]
+    public bool IsLeaving { get; set; }
 }

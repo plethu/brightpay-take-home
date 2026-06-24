@@ -5,14 +5,35 @@
 
 @if (!string.IsNullOrWhiteSpace(Message))
 {
-    <div class="toast" role="status">
-        <span class="toast-icon" aria-hidden="true">OK</span>
+    <div class="toast @(IsLeaving ? "toast-exit" : null)" role="status">
+        <span class="toast-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="m5 12 4 4L19 6" />
+            </svg>
+        </span>
         <span class="toast-msg">@Message</span>
-        <a class="toast-dismiss" href="@CheckoutRoutes.Page" aria-label="@Localizer["CheckoutDismissNotification"]">x</a>
+        @if (OnDismiss.HasDelegate)
+        {
+            <button type="button" class="toast-dismiss" aria-label="@Localizer["CheckoutDismissNotification"]" @onclick="@OnDismiss">
+                <span aria-hidden="true">x</span>
+            </button>
+        }
+        else
+        {
+            <a class="toast-dismiss" href="@CheckoutRoutes.Page" aria-label="@Localizer["CheckoutDismissNotification"]">
+                <span aria-hidden="true">x</span>
+            </a>
+        }
     </div>
 }
 
 @code {
     [Parameter]
     public string? Message { get; set; }
+
+    [Parameter]
+    public bool IsLeaving { get; set; }
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
 }

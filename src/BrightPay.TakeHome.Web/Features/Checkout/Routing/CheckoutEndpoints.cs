@@ -28,7 +28,13 @@ public static class CheckoutEndpoints
     {
         BasketSnapshot basket = basketStore.Read(httpContext);
         CheckoutOperationResult result = await catalog.AddAsync(basket, command.SelectedSku, command.Quantity, cancellationToken).ConfigureAwait(false);
-        return RedirectFromMutation(httpContext, basketStore, result, command.SelectedSku);
+        return RedirectFromMutation(
+            httpContext,
+            basketStore,
+            result,
+            command.SelectedSku,
+            CheckoutFeedbackCode.Added,
+            command.SelectedSku);
     }
 
     private static async Task<IResult> IncrementAsync(
@@ -90,7 +96,8 @@ public static class CheckoutEndpoints
         CheckoutBasketCookieStore basketStore,
         CheckoutOperationResult result,
         string? skuText = null,
-        CheckoutFeedbackCode? feedback = null)
+        CheckoutFeedbackCode? feedback = null,
+        string? feedbackSkuText = null)
     {
         if (!result.Succeeded)
         {
@@ -98,6 +105,6 @@ public static class CheckoutEndpoints
         }
 
         basketStore.Write(httpContext, result.Basket);
-        return Results.Redirect(CheckoutRedirects.Success(feedback));
+        return Results.Redirect(CheckoutRedirects.Success(feedback, feedbackSkuText));
     }
 }

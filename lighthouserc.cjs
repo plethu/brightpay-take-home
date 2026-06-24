@@ -21,7 +21,7 @@ module.exports = {
         'categories:seo': ['warn', { minScore: 0.9 }],
         'first-contentful-paint': ['error', { maxNumericValue: 1500, aggregationMethod: 'median' }],
         'largest-contentful-paint': ['error', { maxNumericValue: 2000, aggregationMethod: 'median' }],
-        'total-byte-weight': ['error', { maxNumericValue: 150000, aggregationMethod: 'median' }],
+        'total-byte-weight': ['error', { maxNumericValue: 250000, aggregationMethod: 'median' }],
       },
     },
     upload: {

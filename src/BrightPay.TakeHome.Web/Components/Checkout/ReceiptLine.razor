@@ -1,6 +1,6 @@
 @using BrightPay.TakeHome.Web.Features.Checkout.Projection
 
-<li class="sale-line" data-sku="@Line.Sku">
+<li class="sale-line" data-sku="@Line.Sku" data-quantity="@Line.Quantity" data-offer-active="@(Line.OfferLabel is not null ? "true" : "false")">
     <div class="line-info">
         <p class="line-name">@Line.Name <span class="line-sku">@Line.Sku</span></p>
         @if (Line.OfferLabel is not null)
@@ -8,7 +8,7 @@
             <p class="line-meta"><span class="offer-badge">@Line.OfferLabel</span></p>
         }
     </div>
-    <QuantityStepper Sku="@Line.Sku" Name="@Line.Name" Quantity="@Line.Quantity" />
+    <QuantityStepper Sku="@Line.Sku" Name="@Line.Name" Quantity="@Line.Quantity" OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />
     <div class="line-amounts">
         <span class="line-price">@Line.Total</span>
         @if (Line.PreOfferTotal is not null)
@@ -21,4 +21,10 @@
 @code {
     [Parameter]
     public required CheckoutReceiptLineView Line { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnIncrement { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDecrement { get; set; }
 }

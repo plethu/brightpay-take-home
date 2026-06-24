@@ -4,14 +4,25 @@
 <div class="line-qty-control" role="group" aria-label="@Localizer["CheckoutLineQuantityLabel", Name]">
     <EditForm Model="@_decrementModel" FormName="@($"checkout-decrement-{Sku}")" method="post" action="@CheckoutRoutes.Decrement">
         <input type="hidden" name="sku" value="@Sku">
-        <button type="submit" class="line-step" data-act="dec" aria-label="@DecreaseLabel" title="@DecreaseLabel">
-            @(Quantity == 1 ? Localizer["CheckoutRemoveGlyph"] : "-")
+        <button type="submit" class="line-step" data-act="dec" aria-label="@DecreaseLabel" title="@DecreaseLabel" @onclick="@(() => OnDecrement.InvokeAsync(Sku))" @onclick:preventDefault="true">
+            @if (Quantity == 1)
+            {
+                <svg class="line-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                    <path d="M18 6v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6" />
+                </svg>
+            }
+            else
+            {
+                @("-")
+            }
         </button>
     </EditForm>
     <span class="line-qty" aria-live="polite">@Quantity</span>
     <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment">
         <input type="hidden" name="sku" value="@Sku">
-        <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]">+</button>
+        <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]" @onclick="@(() => OnIncrement.InvokeAsync(Sku))" @onclick:preventDefault="true">+</button>
     </EditForm>
 </div>
 
@@ -27,6 +38,12 @@
 
     [Parameter]
     public int Quantity { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnIncrement { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDecrement { get; set; }
 
     private string DecreaseLabel => Quantity == 1
         ? Localizer["CheckoutRemoveLineLabel", Name]

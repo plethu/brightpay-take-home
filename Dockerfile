@@ -7,7 +7,7 @@ WORKDIR /src
 # Restore first against just the manifests so the layer caches across source
 # changes. Central package management and analyzer configuration need the root
 # files present before publish.
-COPY .editorconfig global.json Directory.Build.props Directory.Packages.props ./
+COPY .editorconfig global.json NuGet.Config Directory.Build.props Directory.Packages.props ./
 COPY src/BrightPay.TakeHome.Core/BrightPay.TakeHome.Core.csproj src/BrightPay.TakeHome.Core/
 COPY src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj src/BrightPay.TakeHome.Web/
 RUN dotnet restore src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj
@@ -17,6 +17,9 @@ RUN dotnet publish src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj \
     --configuration Release \
     --no-restore \
     --output /app
+RUN mkdir -p /app/wwwroot/_framework \
+    && cp "$(find / -path '*/microsoft.aspnetcore.app.internal.assets/*/_framework/blazor.web.js' -print -quit)" /app/wwwroot/_framework/ \
+    && cp "$(find / -path '*/microsoft.aspnetcore.app.internal.assets/*/_framework/blazor.server.js' -print -quit)" /app/wwwroot/_framework/
 
 # Runtime stage.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

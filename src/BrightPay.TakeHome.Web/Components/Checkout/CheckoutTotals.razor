@@ -13,32 +13,59 @@
     <div class="total-actions">
         <EditForm Model="@_clearModel" FormName="checkout-clear" class="action-form action-form-clear" method="post" action="@CheckoutRoutes.Clear" data-clear-form>
             <input type="hidden" name="submitted" value="true">
-            <button type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty">@Localizer["CheckoutClear"]</button>
+            <button type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty" @onclick="@OpenClearDialog" @onclick:preventDefault="true">@Localizer["CheckoutClear"]</button>
         </EditForm>
         <EditForm Model="@_chargeModel" FormName="checkout-charge" class="action-form action-form-checkout" method="post" action="@CheckoutRoutes.Charge">
             <input type="hidden" name="submitted" value="true">
-            <button type="submit" class="btn btn-checkout" data-action="checkout" disabled="@Totals.IsEmpty">
+            <button type="submit" class="btn btn-checkout" data-action="checkout" disabled="@Totals.IsEmpty" @onclick="@OnCharge" @onclick:preventDefault="true">
                 <span class="checkout-label">@Localizer["CheckoutCharge"]</span>
                 <span class="checkout-amount">@Totals.Total</span>
             </button>
         </EditForm>
     </div>
-    <dialog class="confirm" data-clear-dialog aria-labelledby="clear-confirm-title">
-        <form method="dialog">
-            <h2 id="clear-confirm-title">@Localizer["CheckoutClearConfirmTitle"]</h2>
-            <p>@Localizer["CheckoutClearConfirm"]</p>
-            <div class="confirm-actions">
-                <button type="submit" value="cancel" class="btn btn-secondary" autofocus>@Localizer["CheckoutClearCancel"]</button>
-                <button type="submit" value="clear" class="btn btn-clear-confirm">@Localizer["CheckoutClearConfirmAction"]</button>
+
+    @if (_showClearDialog)
+    {
+        <div class="confirm-backdrop" @onclick="@CloseClearDialog">
+            <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="clear-confirm-title" @onclick:stopPropagation="true">
+                <h2 id="clear-confirm-title">@Localizer["CheckoutClearConfirmTitle"]</h2>
+                <p>@Localizer["CheckoutClearConfirm"]</p>
+                <div class="confirm-actions">
+                    <button type="button" class="btn btn-secondary" autofocus @onclick="@CloseClearDialog">@Localizer["CheckoutClearCancel"]</button>
+                    <button type="button" class="btn btn-clear-confirm" @onclick="@ConfirmClear">@Localizer["CheckoutClearConfirmAction"]</button>
+                </div>
             </div>
-        </form>
-    </dialog>
+        </div>
+    }
 </div>
 
 @code {
     private readonly CheckoutEmptyCommand _clearModel = new();
     private readonly CheckoutEmptyCommand _chargeModel = new();
+    private bool _showClearDialog;
 
     [Parameter]
     public required CheckoutTotalsView Totals { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    [Parameter]
+    public EventCallback OnCharge { get; set; }
+
+    private void OpenClearDialog()
+    {
+        _showClearDialog = true;
+    }
+
+    private void CloseClearDialog()
+    {
+        _showClearDialog = false;
+    }
+
+    private async Task ConfirmClear()
+    {
+        _showClearDialog = false;
+        await OnClear.InvokeAsync().ConfigureAwait(true);
+    }
 }
