@@ -196,6 +196,8 @@ coverage*.xml
 coverage*.info
 coverage/
 playwright-report/
+.lighthouseci/
+.pnpm-store/
 
 # Visual Studio code coverage results
 *.coverage

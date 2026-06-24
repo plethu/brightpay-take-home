@@ -6,7 +6,8 @@
 
 ## Prerequisites
 
-- [`mise`](https://mise.jdx.dev/getting-started.html) for devtool versioning;
+- [`mise`](https://mise.jdx.dev/getting-started.html) for devtool versioning
+  (`dotnet`, `just`, OpenTofu, and `pnpm`);
 - [Docker](https://docs.docker.com/get-started/get-docker/) with Docker
   Compose, or [Podman](https://podman.io/docs/installation) with
   `podman-compose`.

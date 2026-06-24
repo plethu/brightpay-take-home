@@ -1,0 +1,11 @@
+{
+  "name": "brightpay-takehome-quality",
+  "private": true,
+  "packageManager": "pnpm@10.34.3",
+  "scripts": {
+    "lhci": "lhci autorun --config=./lighthouserc.cjs"
+  },
+  "devDependencies": {
+    "@lhci/cli": "0.15.1"
+  }
+}

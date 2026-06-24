@@ -1,3 +1,5 @@
+using Deque.AxeCore.Commons;
+using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
 
 namespace BrightPay.TakeHome.Tests.E2E;
@@ -18,6 +20,29 @@ public sealed class HomePageSmokeTests : PageTest
             .ToBeAttachedAsync();
     }
 
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task ShellHasNoBlockingAccessibilityViolations()
+    {
+        string baseUrl = RequireBaseUrl();
+
+        await Page.GotoAsync(baseUrl);
+
+        AxeResult results = await Page.RunAxe(new AxeRunOptions
+        {
+            RunOnly = new RunOnlyOptions
+            {
+                Type = "tag",
+                Values = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"],
+            },
+            ResultTypes = [ResultType.Violations],
+        });
+
+        AxeResultItem[] blockingViolations = [.. results.Violations.Where(IsBlockingViolation)];
+
+        Assert.True(blockingViolations.Length == 0, FormatViolations(blockingViolations));
+    }
+
     private static string RequireBaseUrl()
     {
         string? baseUrl = Environment.GetEnvironmentVariable("E2E_BASE_URL");
@@ -26,5 +51,19 @@ public sealed class HomePageSmokeTests : PageTest
             ? throw new InvalidOperationException(
                 "Set E2E_BASE_URL to run browser smoke tests against a running app.")
             : baseUrl;
+    }
+
+    private static string FormatViolations(IEnumerable<AxeResultItem> violations)
+    {
+        return string.Join(
+            Environment.NewLine,
+            violations.Select(violation =>
+                $"{violation.Id} [{violation.Impact}]: {violation.Help} ({violation.HelpUrl})"));
+    }
+
+    private static bool IsBlockingViolation(AxeResultItem violation)
+    {
+        return string.Equals(violation.Impact, "serious", StringComparison.Ordinal)
+            || string.Equals(violation.Impact, "critical", StringComparison.Ordinal);
     }
 }

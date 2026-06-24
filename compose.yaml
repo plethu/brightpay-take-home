@@ -59,7 +59,7 @@ services:
           - checkout-web
 
   e2e:
-    image: mcr.microsoft.com/playwright/dotnet:v1.60.0-noble
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
     depends_on:
       - db
       - app
@@ -68,10 +68,14 @@ services:
       - ./scripts/run-compose-e2e.sh
     environment:
       E2E_BASE_URL: http://checkout-web:8080
+      LHCI_BASE_URL: http://checkout-web:8080
+      CHROME_PATH: /ms-playwright/chromium-1223/chrome-linux64/chrome
+      PNPM_HOME: /pnpm
     volumes:
       - .:/src
       - nuget-cache:/src/.nuget/packages
       - e2e-dotnet:/opt/dotnet
+      - pnpm-store:/pnpm/store
 
 volumes:
   sql-data:
@@ -82,3 +86,5 @@ volumes:
     name: brightpay-takehome-dotnet-home
   e2e-dotnet:
     name: brightpay-takehome-e2e-dotnet
+  pnpm-store:
+    name: brightpay-takehome-pnpm-store

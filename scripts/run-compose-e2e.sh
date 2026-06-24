@@ -30,6 +30,11 @@ for _ in {1..60}; do
 
         passed_count="$(grep -o 'outcome="Passed"' "$results_dir/e2e.trx" | wc -l)"
         echo "E2E smoke tests completed: $passed_count passed"
+
+        echo "Running Lighthouse CI against $url"
+        corepack prepare pnpm@10.34.3 --activate
+        corepack pnpm install --frozen-lockfile
+        LHCI_BASE_URL="$url" corepack pnpm exec lhci autorun --config=./lighthouserc.cjs
         exit 0
     fi
 

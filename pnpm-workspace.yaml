@@ -1,0 +1,10 @@
+packages: []
+
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+blockExoticSubdeps: true
+strictDepBuilds: true
+dangerouslyAllowAllBuilds: false
+ignoreScripts: true
+verifyDepsBeforeRun: error
+allowBuilds: {}
