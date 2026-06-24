@@ -59,18 +59,15 @@ static int DevDashboard()
     }
 
     ClearConsole();
+    WriteBrightLogo();
 
-    Console.WriteLine("BrightPay Take-Home is running");
-    Console.WriteLine();
-    Console.WriteLine("App");
-    Console.WriteLine($"  Cart:       {cartUrl}");
-    Console.WriteLine($"  Home:       {baseUrl}/");
+    Console.WriteLine($"Open: {baseUrl}/");
     Console.WriteLine();
     Console.WriteLine("Services");
     Console.WriteLine($"  Web:        {webContainer}");
     Console.WriteLine($"  SQL Server: 127.0.0.1:{sqlPort} ({dbContainer})");
     Console.WriteLine();
-    Console.WriteLine("Development commands");
+    Console.WriteLine("Commands");
     Console.WriteLine("  just logs       follow web logs");
     Console.WriteLine("  just shell-web  open a shell in the web container");
     Console.WriteLine("  just shell-db   open a shell in the SQL Server container");
@@ -125,6 +122,31 @@ static void ClearConsole()
     {
         Console.WriteLine();
     }
+}
+
+static void WriteBrightLogo()
+{
+    string[] logo =
+    [
+        "  .:-.",
+        "-====.                                                       .",
+        "=====.             .#######*+:          .*#*.             -+#=         :--",
+        "=====.  .          .%%%*==*%%%- ....  ...+*+.   .... ... .%%%= ....  .#%%+",
+        "=====.  ::...      .%%%+::=%%*: *##+=#%+:***: -*#%%#####=.%%%**%%##*..%%%##*",
+        "=====.  ::::::.    .%%%%%%%%%+. *%%%%+=-:%%%--%%%=--=%%%+.%%%%+-=%%%*.%%%*--",
+        "=====.   .:::::    .%%%=  .*%%#.*%%#.   :%%%-+%##.   %%%+.%%%+   #%#*.%%%=",
+        "=====...:----::    .%%%*==+#%%# *%%#    -%%%-.#%%#**#%%%+.%%%=   #%%* #%%#+=",
+        "====---======-.    .#######*+-  +##*    :###:  -=+*+=%%%+.###-   *##+ .=*###",
+        ".:--====--:.                                  .+=---*%%#:",
+        "    .:::.                                     :*##%%#+-.",
+    ];
+
+    foreach (string line in logo)
+    {
+        Console.WriteLine(line);
+    }
+
+    Console.WriteLine();
 }
 
 static string FindRepositoryRoot()
