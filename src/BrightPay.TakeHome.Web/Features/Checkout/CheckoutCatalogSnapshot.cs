@@ -9,5 +9,5 @@ public sealed record CheckoutCatalogSnapshot(
     IReadOnlyList<ProductPrice> ProductPrices,
     IReadOnlyList<OfferDefinition> Offers)
 {
-    public CheckoutTransaction StartTransaction(BasketSnapshot basket) => new(ProductPrices, basket);
+    public CheckoutTransaction StartTransaction(BasketSnapshot basket) => new(ProductPrices, Offers, basket);
 }

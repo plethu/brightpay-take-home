@@ -1,0 +1,29 @@
+@using BrightPay.TakeHome.Web.Features.Checkout.Projection
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="sale-body">
+    @if (IsEmpty)
+    {
+        <div class="empty-state">
+            <strong>@Localizer["CheckoutEmptyTitle"]</strong>
+            <span>@Localizer["CheckoutEmptyBody"]</span>
+        </div>
+    }
+    else
+    {
+        <ul class="sale-list">
+            @foreach (CheckoutReceiptLineView line in Lines)
+            {
+                <ReceiptLine Line="@line" />
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<CheckoutReceiptLineView> Lines { get; set; } = [];
+
+    [Parameter]
+    public bool IsEmpty { get; set; }
+}

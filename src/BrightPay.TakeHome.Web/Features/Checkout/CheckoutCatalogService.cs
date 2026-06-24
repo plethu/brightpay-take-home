@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrightPay.TakeHome.Web.Features.Checkout;
 
-public sealed class CheckoutCatalogService
+public sealed class CheckoutCatalogService : ICheckoutCatalogService
 {
     private readonly CheckoutDbContext _dbContext;
 
@@ -58,27 +58,58 @@ public sealed class CheckoutCatalogService
         ];
     }
 
-    public async Task<CheckoutOperationResult> ScanAsync(
+    public async Task<CheckoutOperationResult> AddAsync(
         BasketSnapshot basket,
         string? skuText,
+        int quantity,
         CancellationToken cancellationToken = default)
     {
         CheckoutCatalogSnapshot catalog = await LoadActiveCatalogAsync(cancellationToken).ConfigureAwait(false);
 
-        return catalog.StartTransaction(basket).Scan(skuText);
+        return catalog.StartTransaction(basket).Add(skuText, quantity);
     }
 
-    public static CheckoutOperationResult RemoveLine(BasketSnapshot basket, Sku sku)
+    public async Task<CheckoutOperationResult> IncrementAsync(
+        BasketSnapshot basket,
+        Sku sku,
+        CancellationToken cancellationToken = default)
     {
-        CheckoutCatalogSnapshot catalog = new([], []);
+        CheckoutCatalogSnapshot catalog = await LoadActiveCatalogAsync(cancellationToken).ConfigureAwait(false);
+
+        return catalog.StartTransaction(basket).Increment(sku);
+    }
+
+    public async Task<CheckoutOperationResult> DecrementAsync(
+        BasketSnapshot basket,
+        Sku sku,
+        CancellationToken cancellationToken = default)
+    {
+        CheckoutCatalogSnapshot catalog = await LoadActiveCatalogAsync(cancellationToken).ConfigureAwait(false);
+
+        return catalog.StartTransaction(basket).Decrement(sku);
+    }
+
+    public async Task<CheckoutOperationResult> RemoveLineAsync(
+        BasketSnapshot basket,
+        Sku sku,
+        CancellationToken cancellationToken = default)
+    {
+        CheckoutCatalogSnapshot catalog = await LoadActiveCatalogAsync(cancellationToken).ConfigureAwait(false);
 
         return catalog.StartTransaction(basket).RemoveLine(sku);
     }
 
-    public static CheckoutOperationResult Clear(BasketSnapshot basket)
+    public CheckoutOperationResult Clear(BasketSnapshot basket)
     {
         CheckoutCatalogSnapshot catalog = new([], []);
 
         return catalog.StartTransaction(basket).Clear();
+    }
+
+    public CheckoutOperationResult Charge(BasketSnapshot basket)
+    {
+        CheckoutCatalogSnapshot catalog = new([], []);
+
+        return catalog.StartTransaction(basket).Charge();
     }
 }

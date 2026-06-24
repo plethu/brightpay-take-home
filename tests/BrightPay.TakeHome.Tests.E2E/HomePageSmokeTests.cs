@@ -1,28 +1,86 @@
+using BrightPay.TakeHome.Web;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 
 namespace BrightPay.TakeHome.Tests.E2E;
 
 public sealed class HomePageSmokeTests : PageTest
 {
+    private readonly IStringLocalizer<SharedResource> _localizer = BuildLocalizer();
+
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task ShellRendersLocalizedHomePage()
+    public async Task CheckoutSupportsInteractiveSaleFlow()
     {
         string baseUrl = RequireBaseUrl();
 
         await Page.GotoAsync(baseUrl);
 
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "BrightPay Checkout", Exact = true }))
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = Text("CartHeading"), Exact = true }))
             .ToBeVisibleAsync();
-        await Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Skip to main content" }))
+        await Expect(Page.GetByRole(AriaRole.Link, new() { Name = Text("ShellSkipToContent") }))
             .ToBeAttachedAsync();
+
+        await AddSkuAsync(Page, "A", 3);
+        await Expect(Page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.30");
+        await Expect(Page.Locator(".sale-pane").GetByText(Text("CheckoutOffer_QuantityForFixedPrice", 3, "£1.30"))).ToBeVisibleAsync();
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutDecreaseLineLabel", Text("SkuName_A")) }).ClickAsync();
+        await Expect(Page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.00");
+
+        await Page.GetByLabel(Text("CheckoutScanLabel")).FillAsync("Z");
+        await Page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutAddButton"), Exact = true }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Alert)).ToContainTextAsync(Text("CheckoutError_UnknownSku", "Z"));
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutClear") }).ClickAsync().ConfigureAwait(true);
+        await Page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutClearConfirmAction") }).ClickAsync().ConfigureAwait(true);
+        await Expect(Page.Locator(".toast")).ToContainTextAsync(Text("CheckoutToast_Cleared")).ConfigureAwait(true);
+
+        await AddSkuAsync(Page, "B", 2).ConfigureAwait(true);
+        await Page.Locator("[data-action='checkout']").ClickAsync().ConfigureAwait(true);
+        await Expect(Page.Locator(".toast")).ToContainTextAsync(Text("CheckoutToast_Charged")).ConfigureAwait(true);
     }
 
     [Fact]
     [Trait("Category", "E2E")]
-    public async Task ShellHasNoBlockingAccessibilityViolations()
+    public async Task CheckoutNoJsPathSupportsServerRenderedMutations()
+    {
+        string baseUrl = RequireBaseUrl();
+
+        IBrowserContext context = await Browser.NewContextAsync(new BrowserNewContextOptions
+        {
+            JavaScriptEnabled = false,
+        }).ConfigureAwait(true);
+        try
+        {
+            IPage page = await context.NewPageAsync().ConfigureAwait(true);
+
+            await page.GotoAsync(baseUrl).ConfigureAwait(true);
+            await AddSkuAsync(page, "A", 3).ConfigureAwait(true);
+            await Expect(page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.30").ConfigureAwait(true);
+
+            await page.GetByLabel(Text("CheckoutScanLabel")).FillAsync("Z").ConfigureAwait(true);
+            await page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutAddButton"), Exact = true }).ClickAsync().ConfigureAwait(true);
+            await Expect(page.GetByRole(AriaRole.Alert)).ToContainTextAsync(Text("CheckoutError_UnknownSku", "Z")).ConfigureAwait(true);
+
+            await page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutDecreaseLineLabel", Text("SkuName_A")) }).ClickAsync().ConfigureAwait(true);
+            await Expect(page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.00").ConfigureAwait(true);
+
+            await page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutClear") }).ClickAsync().ConfigureAwait(true);
+            await Expect(page.Locator(".toast")).ToContainTextAsync(Text("CheckoutToast_Cleared")).ConfigureAwait(true);
+        }
+        finally
+        {
+            await context.CloseAsync().ConfigureAwait(true);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task CheckoutHasNoBlockingAccessibilityViolations()
     {
         string baseUrl = RequireBaseUrl();
 
@@ -65,5 +123,23 @@ public sealed class HomePageSmokeTests : PageTest
     {
         return string.Equals(violation.Impact, "serious", StringComparison.Ordinal)
             || string.Equals(violation.Impact, "critical", StringComparison.Ordinal);
+    }
+
+    private string Text(string key, params object[] arguments) => _localizer[key, arguments].Value;
+
+    private static IStringLocalizer<SharedResource> BuildLocalizer()
+    {
+        ServiceCollection services = new();
+        services.AddLogging();
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
+        return services.BuildServiceProvider().GetRequiredService<IStringLocalizer<SharedResource>>();
+    }
+
+    private static async Task AddSkuAsync(IPage page, string sku, int count)
+    {
+        for (int index = 0; index < count; index++)
+        {
+            await page.Locator($".sku-tile[value='{sku}']").ClickAsync().ConfigureAwait(false);
+        }
     }
 }

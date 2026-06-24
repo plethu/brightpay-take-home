@@ -68,7 +68,118 @@
     <value>BrightPay Checkout</value>
   </data>
   <data name="CartIntro" xml:space="preserve">
-    <value>Project scaffold is ready. The checkout workflow will be built here.</value>
+    <value>Add SKUs to the current sale, check active offers, and charge the basket.</value>
+  </data>
+  <data name="SkuName_A" xml:space="preserve">
+    <value>Apple</value>
+  </data>
+  <data name="SkuName_B" xml:space="preserve">
+    <value>Banana</value>
+  </data>
+  <data name="SkuName_C" xml:space="preserve">
+    <value>Chocolate</value>
+  </data>
+  <data name="SkuName_D" xml:space="preserve">
+    <value>Doughnut</value>
+  </data>
+  <data name="CheckoutAddHeading" xml:space="preserve">
+    <value>Add to sale</value>
+  </data>
+  <data name="CheckoutQuantityLabel" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="CheckoutDecreaseQuantity" xml:space="preserve">
+    <value>Decrease quantity</value>
+  </data>
+  <data name="CheckoutIncreaseQuantity" xml:space="preserve">
+    <value>Increase quantity</value>
+  </data>
+  <data name="CheckoutSkuPadLabel" xml:space="preserve">
+    <value>Add an item at the chosen quantity</value>
+  </data>
+  <data name="CheckoutScanLabel" xml:space="preserve">
+    <value>Scan or type a SKU</value>
+  </data>
+  <data name="CheckoutScanPlaceholder" xml:space="preserve">
+    <value>e.g. A</value>
+  </data>
+  <data name="CheckoutAddButton" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="CheckoutCurrentSale" xml:space="preserve">
+    <value>Current sale</value>
+  </data>
+  <data name="CheckoutItemCount" xml:space="preserve">
+    <value>{0} items</value>
+  </data>
+  <data name="CheckoutEmptyTitle" xml:space="preserve">
+    <value>No items yet</value>
+  </data>
+  <data name="CheckoutEmptyBody" xml:space="preserve">
+    <value>Press an item above, or scan one with the gun.</value>
+  </data>
+  <data name="CheckoutOffer_QuantityForFixedPrice" xml:space="preserve">
+    <value>{0} for {1}</value>
+  </data>
+  <data name="CheckoutSubtotal" xml:space="preserve">
+    <value>Subtotal</value>
+  </data>
+  <data name="CheckoutSavings" xml:space="preserve">
+    <value>Offer savings</value>
+  </data>
+  <data name="CheckoutClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="CheckoutClearConfirm" xml:space="preserve">
+    <value>This removes every line from the current sale. It cannot be undone.</value>
+  </data>
+  <data name="CheckoutClearConfirmTitle" xml:space="preserve">
+    <value>Clear the whole sale?</value>
+  </data>
+  <data name="CheckoutClearCancel" xml:space="preserve">
+    <value>Keep sale</value>
+  </data>
+  <data name="CheckoutClearConfirmAction" xml:space="preserve">
+    <value>Clear sale</value>
+  </data>
+  <data name="CheckoutCharge" xml:space="preserve">
+    <value>Charge</value>
+  </data>
+  <data name="CheckoutLineQuantityLabel" xml:space="preserve">
+    <value>{0} quantity</value>
+  </data>
+  <data name="CheckoutRemoveLineLabel" xml:space="preserve">
+    <value>Remove {0}</value>
+  </data>
+  <data name="CheckoutDecreaseLineLabel" xml:space="preserve">
+    <value>Decrease {0}</value>
+  </data>
+  <data name="CheckoutAddOneLabel" xml:space="preserve">
+    <value>Add {0}</value>
+  </data>
+  <data name="CheckoutRemoveGlyph" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="CheckoutError_EmptySku" xml:space="preserve">
+    <value>Enter a SKU before adding to the sale.</value>
+  </data>
+  <data name="CheckoutError_InvalidQuantity" xml:space="preserve">
+    <value>Quantity must be at least 1.</value>
+  </data>
+  <data name="CheckoutError_UnknownSku" xml:space="preserve">
+    <value>"{0}" is not a known SKU. Check the keys and try again.</value>
+  </data>
+  <data name="CheckoutError_EmptyBasket" xml:space="preserve">
+    <value>The current sale is already empty.</value>
+  </data>
+  <data name="CheckoutToast_Charged" xml:space="preserve">
+    <value>Sale charged. The basket is ready for the next customer.</value>
+  </data>
+  <data name="CheckoutToast_Cleared" xml:space="preserve">
+    <value>Sale cleared.</value>
+  </data>
+  <data name="CheckoutDismissNotification" xml:space="preserve">
+    <value>Dismiss notification</value>
   </data>
   <data name="ErrorHeading" xml:space="preserve">
     <value>Something went wrong</value>

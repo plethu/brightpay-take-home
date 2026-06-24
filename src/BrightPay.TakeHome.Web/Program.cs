@@ -2,6 +2,9 @@ using System.Globalization;
 using BrightPay.TakeHome.Web.Components;
 using BrightPay.TakeHome.Web.Data.Checkout;
 using BrightPay.TakeHome.Web.Features.Checkout;
+using BrightPay.TakeHome.Web.Features.Checkout.Projection;
+using BrightPay.TakeHome.Web.Features.Checkout.Routing;
+using BrightPay.TakeHome.Web.Features.Checkout.State;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -27,6 +30,9 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 // App.razor resolves the theme cookie to server-render data-theme without flicker.
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDataProtection();
+builder.Services.AddScoped<CheckoutBasketCookieStore>();
+builder.Services.AddScoped<CheckoutViewProjector>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -36,7 +42,7 @@ if (!string.IsNullOrWhiteSpace(checkoutConnection))
 {
     builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
     // Keep offer evaluator registrations manual until the list grows; evaluate Scrutor for autodiscovery later.
-    builder.Services.AddScoped<CheckoutCatalogService>();
+    builder.Services.AddScoped<ICheckoutCatalogService, CheckoutCatalogService>();
 }
 
 WebApplication app = builder.Build();
@@ -61,6 +67,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+app.MapCheckoutEndpoints();
 
 if (!string.IsNullOrWhiteSpace(checkoutConnection))
 {

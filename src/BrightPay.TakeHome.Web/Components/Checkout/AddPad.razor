@@ -1,0 +1,54 @@
+@using BrightPay.TakeHome.Web.Features.Checkout.Projection
+@using BrightPay.TakeHome.Web.Features.Checkout.Routing
+@inject IStringLocalizer<SharedResource> Localizer
+
+<section class="pane add-pane" aria-labelledby="add-hd">
+    <EditForm Model="@_formModel" FormName="checkout-add" class="add-form" method="post" action="@CheckoutRoutes.Add">
+        <div class="add-head">
+            <h2 class="pane-title" id="add-hd">@Localizer["CheckoutAddHeading"]</h2>
+            <div class="qty">
+                <label for="qty">@Localizer["CheckoutQuantityLabel"]</label>
+                <div class="qty-control">
+                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]" data-qty-step="-1">-</button>
+                    <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" value="1">
+                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutIncreaseQuantity"]" data-qty-step="1">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sku-pad" role="group" aria-label="@Localizer["CheckoutSkuPadLabel"]">
+            @foreach (CheckoutCatalogItemView item in Catalog)
+            {
+                <button type="submit" name="sku" value="@item.Sku" class="sku-tile">
+                    <span class="tile-name">@item.Name <span class="tile-sku">@item.Sku</span></span>
+                    <span class="tile-price">@item.UnitPrice</span>
+                    @if (item.OfferLabel is not null)
+                    {
+                        <span class="offer-badge">@item.OfferLabel</span>
+                    }
+                </button>
+            }
+        </div>
+
+        <div class="manual">
+            <div class="scan-form">
+                <div class="field">
+                    <label for="scan">@Localizer["CheckoutScanLabel"]</label>
+                    <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1" placeholder="@Localizer["CheckoutScanPlaceholder"]" aria-describedby="scan-alert" aria-invalid="@(ErrorMessage is not null ? "true" : "false")">
+                </div>
+                <button type="submit" class="btn btn-secondary">@Localizer["CheckoutAddButton"]</button>
+            </div>
+            <CheckoutAlert Message="@ErrorMessage" />
+        </div>
+    </EditForm>
+</section>
+
+@code {
+    private readonly CheckoutAddCommand _formModel = new();
+
+    [Parameter]
+    public IReadOnlyList<CheckoutCatalogItemView> Catalog { get; set; } = [];
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+}

@@ -3,9 +3,11 @@
   "private": true,
   "packageManager": "pnpm@10.34.3",
   "scripts": {
+    "build:checkout": "tsc --project tsconfig.json",
     "lhci": "lhci autorun --config=./lighthouserc.cjs"
   },
   "devDependencies": {
-    "@lhci/cli": "0.15.1"
+    "@lhci/cli": "0.15.1",
+    "typescript": "6.0.3"
   }
 }

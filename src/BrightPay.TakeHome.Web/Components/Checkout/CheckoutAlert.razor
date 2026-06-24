@@ -1,0 +1,11 @@
+<div data-region="alert" id="scan-alert">
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <p class="banner-error" role="alert"><span>@Message</span></p>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+}

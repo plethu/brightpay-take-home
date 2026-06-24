@@ -1,0 +1,18 @@
+@inject IStringLocalizer<SharedResource> Localizer
+@using BrightPay.TakeHome.Web.Features.Checkout.Routing
+
+<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">@Message</div>
+
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="toast" role="status">
+        <span class="toast-icon" aria-hidden="true">OK</span>
+        <span class="toast-msg">@Message</span>
+        <a class="toast-dismiss" href="@CheckoutRoutes.Page" aria-label="@Localizer["CheckoutDismissNotification"]">x</a>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+}

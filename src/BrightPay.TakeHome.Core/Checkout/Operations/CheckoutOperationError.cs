@@ -4,5 +4,6 @@ public enum CheckoutOperationError
 {
     EmptySku,
     UnknownSku,
+    InvalidQuantity,
     EmptyBasket,
 }

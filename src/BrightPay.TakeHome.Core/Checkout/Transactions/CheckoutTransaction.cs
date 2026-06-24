@@ -1,5 +1,7 @@
 using NodaMoney;
 using BrightPay.TakeHome.Core.Checkout.Basket;
+using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
+using BrightPay.TakeHome.Core.Checkout.Projection;
 using BrightPay.TakeHome.Core.Checkout.Operations;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
@@ -9,27 +11,37 @@ namespace BrightPay.TakeHome.Core.Checkout.Transactions;
 public sealed class CheckoutTransaction
 {
     private readonly Dictionary<Sku, ProductPrice> _prices;
+    private readonly PricedBasketProjector _projector;
 
-    public CheckoutTransaction(IEnumerable<ProductPrice> prices, BasketSnapshot basket)
+    public CheckoutTransaction(IEnumerable<ProductPrice> prices, IEnumerable<OfferDefinition> offers, BasketSnapshot basket)
     {
         ArgumentNullException.ThrowIfNull(prices);
+        ArgumentNullException.ThrowIfNull(offers);
         ArgumentNullException.ThrowIfNull(basket);
 
         _prices = prices.ToDictionary(price => price.Sku);
+        _projector = new PricedBasketProjector(_prices.Values, offers);
         Basket = basket;
     }
 
     public BasketSnapshot Basket { get; }
 
-    public Money Total => Basket.Lines.Aggregate(
-        CheckoutMoney.Zero,
-        (total, line) => total + (_prices[line.Sku].UnitPrice * line.Quantity));
+    public Money Total => Project().Total;
 
-    public CheckoutOperationResult Scan(string? skuText)
+    public PricedBasket Project() => _projector.Project(Basket);
+
+    public CheckoutOperationResult Scan(string? skuText) => Add(skuText, quantity: 1);
+
+    public CheckoutOperationResult Add(string? skuText, int quantity)
     {
         if (string.IsNullOrWhiteSpace(skuText))
         {
             return CheckoutOperationResult.Failure(Basket, CheckoutOperationError.EmptySku);
+        }
+
+        if (quantity < 1)
+        {
+            return CheckoutOperationResult.Failure(Basket, CheckoutOperationError.InvalidQuantity);
         }
 
         Sku? parsedSku = Sku.TryCreate(skuText);
@@ -43,11 +55,35 @@ public sealed class CheckoutTransaction
         if (existingIndex >= 0)
         {
             BasketLine existing = lines[existingIndex];
-            lines[existingIndex] = new BasketLine(existing.Sku, existing.Quantity + 1);
+            lines[existingIndex] = new BasketLine(existing.Sku, existing.Quantity + quantity);
         }
         else
         {
-            lines.Add(new BasketLine(sku, quantity: 1));
+            lines.Add(new BasketLine(sku, quantity));
+        }
+
+        return CheckoutOperationResult.Success(new BasketSnapshot(lines));
+    }
+
+    public CheckoutOperationResult Increment(Sku sku) => Add(sku.Value, quantity: 1);
+
+    public CheckoutOperationResult Decrement(Sku sku)
+    {
+        List<BasketLine> lines = [.. Basket.Lines];
+        int existingIndex = lines.FindIndex(line => line.Sku == sku);
+        if (existingIndex < 0)
+        {
+            return CheckoutOperationResult.Failure(Basket, CheckoutOperationError.UnknownSku);
+        }
+
+        BasketLine existing = lines[existingIndex];
+        if (existing.Quantity == 1)
+        {
+            lines.RemoveAt(existingIndex);
+        }
+        else
+        {
+            lines[existingIndex] = new BasketLine(existing.Sku, existing.Quantity - 1);
         }
 
         return CheckoutOperationResult.Success(new BasketSnapshot(lines));
@@ -66,4 +102,6 @@ public sealed class CheckoutTransaction
             ? CheckoutOperationResult.Failure(Basket, CheckoutOperationError.EmptyBasket)
             : CheckoutOperationResult.Success(BasketSnapshot.Empty);
     }
+
+    public CheckoutOperationResult Charge() => Clear();
 }

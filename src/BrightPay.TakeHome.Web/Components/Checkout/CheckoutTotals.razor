@@ -1,0 +1,44 @@
+@using BrightPay.TakeHome.Web.Features.Checkout.Projection
+@using BrightPay.TakeHome.Web.Features.Checkout.Routing
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="total-foot">
+    <div class="totals" aria-live="polite">
+        <div class="totals-row"><span>@Localizer["CheckoutSubtotal"]</span><span class="amount">@Totals.Subtotal</span></div>
+        @if (Totals.HasSavings)
+        {
+            <div class="totals-row totals-saving"><span>@Localizer["CheckoutSavings"]</span><span class="amount">-@Totals.Savings</span></div>
+        }
+    </div>
+    <div class="total-actions">
+        <EditForm Model="@_clearModel" FormName="checkout-clear" class="action-form action-form-clear" method="post" action="@CheckoutRoutes.Clear" data-clear-form>
+            <input type="hidden" name="submitted" value="true">
+            <button type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty">@Localizer["CheckoutClear"]</button>
+        </EditForm>
+        <EditForm Model="@_chargeModel" FormName="checkout-charge" class="action-form action-form-checkout" method="post" action="@CheckoutRoutes.Charge">
+            <input type="hidden" name="submitted" value="true">
+            <button type="submit" class="btn btn-checkout" data-action="checkout" disabled="@Totals.IsEmpty">
+                <span class="checkout-label">@Localizer["CheckoutCharge"]</span>
+                <span class="checkout-amount">@Totals.Total</span>
+            </button>
+        </EditForm>
+    </div>
+    <dialog class="confirm" data-clear-dialog aria-labelledby="clear-confirm-title">
+        <form method="dialog">
+            <h2 id="clear-confirm-title">@Localizer["CheckoutClearConfirmTitle"]</h2>
+            <p>@Localizer["CheckoutClearConfirm"]</p>
+            <div class="confirm-actions">
+                <button type="submit" value="cancel" class="btn btn-secondary" autofocus>@Localizer["CheckoutClearCancel"]</button>
+                <button type="submit" value="clear" class="btn btn-clear-confirm">@Localizer["CheckoutClearConfirmAction"]</button>
+            </div>
+        </form>
+    </dialog>
+</div>
+
+@code {
+    private readonly CheckoutEmptyCommand _clearModel = new();
+    private readonly CheckoutEmptyCommand _chargeModel = new();
+
+    [Parameter]
+    public required CheckoutTotalsView Totals { get; set; }
+}

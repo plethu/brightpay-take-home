@@ -33,7 +33,7 @@ public sealed class CheckoutCatalogMappingTests
     }
 
     [Fact]
-    public void TransactionStartedFromCatalogWithActiveOfferStillUsesUnitPriceTotal()
+    public void TransactionStartedFromCatalogWithActiveOfferUsesOfferTotal()
     {
         CheckoutCatalogSnapshot catalog = new(
             [new ProductPrice(Sku.From("A"), CheckoutMoney.Pounds(50m))],
@@ -50,6 +50,6 @@ public sealed class CheckoutCatalogMappingTests
         basket = catalog.StartTransaction(basket).Scan("A").Basket;
         basket = catalog.StartTransaction(basket).Scan("A").Basket;
 
-        catalog.StartTransaction(basket).Total.Amount.Should().Be(150m);
+        catalog.StartTransaction(basket).Total.Amount.Should().Be(130m);
     }
 }

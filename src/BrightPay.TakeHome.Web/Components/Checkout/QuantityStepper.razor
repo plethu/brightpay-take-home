@@ -1,0 +1,34 @@
+@using BrightPay.TakeHome.Web.Features.Checkout.Routing
+@inject IStringLocalizer<SharedResource> Localizer
+
+<div class="line-qty-control" role="group" aria-label="@Localizer["CheckoutLineQuantityLabel", Name]">
+    <EditForm Model="@_decrementModel" FormName="@($"checkout-decrement-{Sku}")" method="post" action="@CheckoutRoutes.Decrement">
+        <input type="hidden" name="sku" value="@Sku">
+        <button type="submit" class="line-step" data-act="dec" aria-label="@DecreaseLabel" title="@DecreaseLabel">
+            @(Quantity == 1 ? Localizer["CheckoutRemoveGlyph"] : "-")
+        </button>
+    </EditForm>
+    <span class="line-qty" aria-live="polite">@Quantity</span>
+    <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment">
+        <input type="hidden" name="sku" value="@Sku">
+        <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]">+</button>
+    </EditForm>
+</div>
+
+@code {
+    private readonly CheckoutSkuCommand _decrementModel = new();
+    private readonly CheckoutSkuCommand _incrementModel = new();
+
+    [Parameter]
+    public required string Sku { get; set; }
+
+    [Parameter]
+    public required string Name { get; set; }
+
+    [Parameter]
+    public int Quantity { get; set; }
+
+    private string DecreaseLabel => Quantity == 1
+        ? Localizer["CheckoutRemoveLineLabel", Name]
+        : Localizer["CheckoutDecreaseLineLabel", Name];
+}
