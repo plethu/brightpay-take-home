@@ -1,9 +1,6 @@
 @page "/"
-@inject IStringLocalizer<SharedResource> Localizer
+@inject NavigationManager Navigation
 
-<PageTitle>@Localizer["AppName"]</PageTitle>
-
-<section class="page" aria-labelledby="page-title">
-    <h1 id="page-title">@Localizer["HomeHeading"]</h1>
-    <p class="lead">@Localizer["HomeIntro"]</p>
-</section>
+@code {
+    protected override void OnInitialized() => Navigation.NavigateTo("/cart");
+}

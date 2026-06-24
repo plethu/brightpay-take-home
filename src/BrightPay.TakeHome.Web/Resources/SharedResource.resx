@@ -64,10 +64,10 @@
   <data name="ShellSkipToContent" xml:space="preserve">
     <value>Skip to main content</value>
   </data>
-  <data name="HomeHeading" xml:space="preserve">
+  <data name="CartHeading" xml:space="preserve">
     <value>BrightPay Checkout</value>
   </data>
-  <data name="HomeIntro" xml:space="preserve">
+  <data name="CartIntro" xml:space="preserve">
     <value>Project scaffold is ready. The checkout workflow will be built here.</value>
   </data>
   <data name="ErrorHeading" xml:space="preserve">
