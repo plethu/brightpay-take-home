@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mockup E — Add pad + sale</title>
+    <link rel="stylesheet" href="../../src/BrightPay.TakeHome.Web/wwwroot/app.css">
+    <link rel="stylesheet" href="./mockups.css">
+    <style>
+        /* Layout E: the synthesis from 05-design.md "Carry forward to E", revised
+         * against Allie's notes. Unlike A-D this mockup is genuinely interactive
+         * (see e.js): real add / quantity / remove / clear / charge, no reloads,
+         * so it represents the feel we'll build in Blazor.
+         *
+         *   LEFT  — Add. Touch-first: four large keys (name, SKU, price, offer); a
+         *           quantity stepper feeds the next add; a quieter scan/type field
+         *           is the manual + barcode + no-JS fallback and where a bad SKU
+         *           surfaces.
+         *   RIGHT — Sale. A name-led receipt; each line owns a stepper so quantity
+         *           and removal are explicit (the minus turns into a bin at qty 1).
+         *           Line prices right-align with the subtotal/savings column. The
+         *           running total rides ON the Charge button (the Square pattern
+         *           the field research found), so it stays glanceable and pinned
+         *           to the action.
+         *
+         * New tokens (--color-offer-*, --color-action-*) live here for now and get
+         * lifted into app.css once settled. Dark variants run a touch more
+         * saturated than their light equivalents to hold colour on the dark
+         * canvas. Narrow screens stack: add pad -> sale -> total. */
+
+        :root,
+        :root[data-theme="light"] {
+            /* Offer / coupon: a calm honey, distinct from brand-green (savings)
+             * and danger-red, paired with a tag icon so colour isn't the signal. */
+            --color-offer-surface: oklch(96.5% 0.035 90);
+            --color-offer-border: oklch(76% 0.10 82);
+            --color-offer-text: oklch(46% 0.085 72);
+            /* Primary action: deep ink with a whisper of brand, not a green fill. */
+            --color-action-primary: oklch(33% 0.04 165);
+            --color-action-primary-hover: oklch(39% 0.05 165);
+            --color-action-primary-text: oklch(98% 0.005 160);
+            /* Danger: warm clay, not the stock alert-red. Lower chroma and a
+             * hue shifted off pure orange-red so the banner / destructive hover
+             * read as a serious work-tool warning rather than a Bootstrap toast. */
+            --color-danger-surface: oklch(95.5% 0.018 35);
+            --color-danger-border: oklch(68% 0.115 34);
+            --color-danger-text: oklch(44% 0.105 34);
+        }
+
+        :root[data-theme="dark"] {
+            /* More saturated than the light tones so they read on dark. */
+            --color-offer-surface: oklch(37% 0.075 86);
+            --color-offer-border: oklch(66% 0.13 86);
+            --color-offer-text: oklch(91% 0.105 90);
+            --color-action-primary: oklch(80% 0.135 165);
+            --color-action-primary-hover: oklch(86% 0.15 165);
+            --color-action-primary-text: oklch(22% 0.03 165);
+            /* Same clay, a touch more saturated to hold on the dark canvas. */
+            --color-danger-surface: oklch(33% 0.065 35);
+            --color-danger-border: oklch(62% 0.135 34);
+            --color-danger-text: oklch(89% 0.06 34);
+        }
+
+        /* Touch targets. The WCAG 2.5.5 / Apple HIG floor is 44px; on coarse
+         * pointers (phone/tablet glass) bump to Material's 48px so the keys and
+         * steppers stay comfortable under a thumb. Lifted into app.css with the
+         * colour tokens once settled. */
+        :root {
+            --touch-target-min: 2.75rem;
+        }
+
+        @media (pointer: coarse) {
+            :root {
+                --touch-target-min: 3rem;
+            }
+        }
+
+        .till-e {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 23rem);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            overflow: clip;
+        }
+
+        @media (width <= 52rem) {
+            .till-e {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pane {
+            padding-block: var(--space-lg);
+            padding-inline: var(--space-lg);
+        }
+
+        /* The divider is the only seam -- no nested cards, no shadow stacking. */
+        .sale-pane {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            border-inline-start: var(--border-width) solid var(--color-border);
+        }
+
+        @media (width <= 52rem) {
+            .sale-pane {
+                border-inline-start: 0;
+                border-block-start: var(--border-width) solid var(--color-border);
+            }
+        }
+
+        .pane-title {
+            margin-block-end: 0;
+            font-size: var(--font-size-md);
+            font-weight: 700;
+        }
+
+        /* Heading row of the add pane: title on the left, the quantity stepper
+         * right-aligned on the same line so it rides with "Add to sale" instead
+         * of eating its own row above the keys. */
+        .add-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-block-end: var(--space-lg);
+        }
+
+        /* Quantity: one segmented stepper. The number input is the no-JS truth;
+         * - / + are JS enhancement. Grid keeps the three cells the same height so
+         * the number sits centred between the buttons. */
+        .qty {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .qty label {
+            font-size: var(--font-size-sm);
+            font-weight: 700;
+            color: var(--color-text-muted);
+        }
+
+        .qty-control {
+            display: inline-grid;
+            grid-auto-flow: column;
+            align-items: stretch;
+            block-size: var(--touch-target-min);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            overflow: clip;
+        }
+
+        /* Borderless segments: no internal dividers, transparent cells inside the
+         * one bordered frame -- the same treatment the cart's per-line stepper
+         * uses, so the two read as one component. */
+        .qty-step {
+            display: grid;
+            place-items: center;
+            inline-size: var(--touch-target-min);
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: var(--color-text);
+            cursor: pointer;
+            transition: background var(--motion-fast) var(--easing-standard);
+        }
+
+        .qty-step svg {
+            inline-size: 1.05rem;
+            block-size: 1.05rem;
+        }
+
+        .qty-step:hover {
+            background: var(--color-canvas);
+        }
+
+        /* place-items centres the digit geometrically, matching the icon cells,
+         * so the number sits level with - and + rather than on the text baseline. */
+        .qty input {
+            display: grid;
+            place-items: center;
+            inline-size: 2.25rem;
+            align-self: stretch;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: var(--color-text);
+            text-align: center;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            -moz-appearance: textfield;
+        }
+
+        .qty input::-webkit-outer-spin-button,
+        .qty input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* The hero of the left pane: four large add targets. */
+        .sku-pad {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+        }
+
+        /* Recessed against the pane (canvas, not surface) so the tiles read as
+         * keys to press, without tipping into fake-hardware costume. Name leads,
+         * SKU is a quiet mono chip, price sits top-right, offer pins to the foot
+         * (tiles without one leave it empty -- no "No offer" filler). */
+        .sku-tile {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-rows: auto 1fr;
+            align-items: start;
+            gap: var(--space-sm) var(--space-md);
+            min-block-size: 6.5rem;
+            padding: var(--space-lg);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-canvas);
+            color: var(--color-text);
+            text-align: start;
+            cursor: pointer;
+            transition: border-color var(--motion-fast) var(--easing-standard),
+                transform var(--motion-fast) var(--easing-standard);
+        }
+
+        .sku-tile:hover {
+            border-color: var(--color-accent);
+        }
+
+        .sku-tile:active {
+            transform: translateY(1px);
+        }
+
+        .sku-tile .tile-name {
+            display: inline-flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+        }
+
+        .sku-tile .tile-sku {
+            font-family: var(--font-mono);
+            font-size: var(--font-size-sm);
+            font-weight: 700;
+            color: var(--color-text-muted);
+        }
+
+        .sku-tile .tile-price {
+            grid-column: 2;
+            justify-self: end;
+            font-variant-numeric: tabular-nums;
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+        }
+
+        .sku-tile .offer-badge {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            align-self: end;
+        }
+
+        /* Phones: keep two keys per row (a keypad still reads as a keypad), but
+         * tighten the box and let the name wrap above the price instead of
+         * colliding with it. */
+        @media (width <= 30rem) {
+            .sku-tile {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                min-block-size: 5.5rem;
+                padding: var(--space-md);
+                gap: var(--space-xs);
+            }
+
+            .sku-tile .tile-price {
+                grid-column: 1;
+                justify-self: start;
+                font-size: var(--font-size-lg);
+            }
+
+            .sku-tile .offer-badge {
+                grid-row: 3;
+            }
+        }
+
+        /* Fallback: scan gun / typed SKU / no-JS. Quieter than the pad, and the
+         * field a bad SKU attaches to (the pad can't produce an unknown one). */
+        .manual {
+            margin-block-start: var(--space-lg);
+            padding-block-start: var(--space-lg);
+            border-block-start: var(--border-width) solid var(--color-border);
+        }
+
+        .manual .scan-form {
+            align-items: end;
+        }
+
+        .manual [data-region="alert"]:not(:empty) {
+            margin-block-start: var(--space-md);
+        }
+
+        /* Sale pane internals: head, scrolling receipt, pinned total. */
+        .sale-pane .panel-head {
+            border-block-end: var(--border-width) solid var(--color-border);
+        }
+
+        /* Item count inlined beside the heading, quiet, so it stops eating a whole
+         * row for low-value information. */
+        .sale-head-line {
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-sm);
+        }
+
+        .sale-count {
+            color: var(--color-text-muted);
+            font-size: var(--font-size-sm);
+            font-weight: 400;
+        }
+
+        .sale-body {
+            flex: 1 1 auto;
+            padding-block: var(--space-xs) var(--space-sm);
+            padding-inline: var(--space-lg);
+            overflow-y: auto;
+        }
+
+        /* A receipt line: name-led info, a per-line stepper, price right-aligned
+         * with the totals column. No SaaS rail. */
+        .sale-list {
+            display: flex;
+            flex-direction: column;
+            list-style: none;
+            padding: 0;
+        }
+
+        .sale-line {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: var(--space-sm) var(--space-md);
+            padding-block: var(--space-md);
+            border-block-end: var(--border-width) solid var(--color-border);
+            box-sizing: border-box;
+        }
+
+        .sale-line:last-child {
+            border-block-end: 0;
+        }
+
+        .sale-line .line-info {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            min-inline-size: 0;
+        }
+
+        .sale-line .line-name {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-weight: 700;
+        }
+
+        .sale-line .line-sku {
+            font-family: var(--font-mono);
+            font-size: var(--font-size-sm);
+            font-weight: 700;
+            color: var(--color-text-muted);
+        }
+
+        .sale-line .line-meta {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Money column, right-aligned to stack with the totals below. When an
+         * offer applies, the pre-offer price sits under the charged price,
+         * struck and muted, so the discount is legible without a noisy row. */
+        .sale-line .line-amounts {
+            display: flex;
+            flex-direction: column;
+            align-items: end;
+            justify-self: end;
+            line-height: 1.25;
+        }
+
+        .sale-line .line-price {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+
+        .sale-line .line-was {
+            color: var(--color-text-muted);
+            font-size: var(--font-size-sm);
+            font-weight: 400;
+            font-variant-numeric: tabular-nums;
+            text-decoration: line-through;
+        }
+
+        /* Per-line quantity stepper. The minus becomes a bin at qty 1, so "take
+         * one off" and "remove the line" are never the same ambiguous control;
+         * the destructive side reveals danger on hover. */
+        /* Same borderless-segment stepper as the add control above: one bordered
+         * frame, transparent cells, icons and number geometrically centred. */
+        .line-qty-control {
+            display: inline-grid;
+            grid-auto-flow: column;
+            align-items: stretch;
+            block-size: var(--touch-target-min);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-sm);
+            overflow: clip;
+            background: var(--color-surface);
+        }
+
+        .line-step {
+            display: grid;
+            place-items: center;
+            inline-size: var(--touch-target-min);
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: var(--color-text);
+            cursor: pointer;
+            transition: background var(--motion-fast) var(--easing-standard),
+                color var(--motion-fast) var(--easing-standard);
+        }
+
+        .line-step svg {
+            inline-size: 1.05rem;
+            block-size: 1.05rem;
+        }
+
+        .line-step:hover {
+            background: var(--color-canvas);
+        }
+
+        .line-step[data-act="dec"]:hover {
+            background: var(--color-danger-surface);
+            color: var(--color-danger-text);
+        }
+
+        .line-qty {
+            display: grid;
+            place-items: center;
+            min-inline-size: 1.75rem;
+            padding-inline: var(--space-xs);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+
+        /* The total foot: small breakdown, then the Charge action carrying the
+         * running total. Not "another card" -- the close of the receipt. */
+        .total-foot {
+            padding-block: var(--space-lg);
+            padding-inline: var(--space-lg);
+            border-block-start: var(--border-width) solid var(--color-border);
+            background: var(--color-surface);
+        }
+
+        .total-foot .totals {
+            padding: 0;
+            border: 0;
+            margin-block-end: var(--space-lg);
+        }
+
+        .total-actions {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        /* Both actions sit tight vertically -- the height floor is the touch
+         * target, not stacked padding -- so they don't read as oversized slabs. */
+        .total-actions .btn {
+            min-block-size: var(--touch-target-min);
+            padding-block: var(--space-xs);
+        }
+
+        /* Clear is destructive; keep it a quiet ghost and reveal danger on intent
+         * (it opens a confirm dialog before wiping the sale). */
+        .total-actions .btn-clear {
+            flex: 1 1 0;
+            background: transparent;
+            border-color: var(--color-border);
+            color: var(--color-text-muted);
+        }
+
+        .total-actions .btn-clear:hover:not(:disabled) {
+            border-color: var(--color-danger-border);
+            background: var(--color-danger-surface);
+            color: var(--color-danger-text);
+        }
+
+        /* Charge carries the total: big amount, glanceable across the lane. */
+        .total-actions .btn-checkout {
+            flex: 3 1 0;
+            justify-content: space-between;
+            gap: var(--space-md);
+            background: var(--color-action-primary);
+            border-color: var(--color-action-primary);
+            color: var(--color-action-primary-text);
+        }
+
+        .total-actions .btn-checkout:hover:not(:disabled) {
+            background: var(--color-action-primary-hover);
+            border-color: var(--color-action-primary-hover);
+        }
+
+        .checkout-label {
+            font-size: var(--font-size-md);
+        }
+
+        .checkout-amount {
+            font-size: var(--font-size-xl);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Offer/coupon treatment, scoped to E: honey tag instead of the star. */
+        .till-e .offer-badge {
+            align-items: center;
+            border-color: var(--color-offer-border);
+            background: var(--color-offer-surface);
+            color: var(--color-offer-text);
+        }
+
+        .till-e .offer-badge::before {
+            content: none;
+        }
+
+        .coupon-ic {
+            inline-size: 0.95em;
+            block-size: 0.95em;
+            flex: 0 0 auto;
+        }
+
+        /* Add-confirmation toast: a JS-enhanced affordance, dismissable, pinned
+         * away from the page corner the dev panel uses. */
+        .toast {
+            position: fixed;
+            inset-block-end: var(--space-lg);
+            inset-inline-start: var(--space-lg);
+            z-index: var(--z-toast);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            max-inline-size: min(24rem, calc(100vw - 2 * var(--space-lg)));
+            padding-block: var(--space-sm);
+            padding-inline: var(--space-md);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            color: var(--color-text);
+            box-shadow: var(--shadow-sm);
+            font-weight: 700;
+        }
+
+        .toast[hidden] {
+            display: none;
+        }
+
+        .toast-icon {
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            inline-size: 1.25rem;
+            block-size: 1.25rem;
+            border-radius: 50%;
+            background: var(--color-success-border);
+            color: var(--color-surface);
+            font-size: var(--font-size-sm);
+        }
+
+        .toast-msg {
+            flex: 1 1 auto;
+        }
+
+        .toast-dismiss {
+            flex: 0 0 auto;
+            padding: var(--space-xs);
+            border: 0;
+            background: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .toast-dismiss:hover {
+            color: var(--color-text);
+        }
+
+        /* Confirm dialog for the destructive clear. Native <dialog> so focus
+         * trapping, Esc, and the backdrop come for free. */
+        .confirm {
+            /* The app.css reset zeroes all margins, which kills the UA's
+             * margin:auto centering for modal dialogs -- restore it. */
+            margin: auto;
+            max-inline-size: min(28rem, calc(100vw - 2 * var(--space-lg)));
+            padding: var(--space-xl);
+            border: var(--border-width) solid var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-surface);
+            color: var(--color-text);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .confirm::backdrop {
+            background: oklch(0% 0 0 / 45%);
+        }
+
+        .confirm h2 {
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+        }
+
+        .confirm p {
+            margin-block-start: var(--space-sm);
+            color: var(--color-text-muted);
+        }
+
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: var(--space-md);
+            margin-block-start: var(--space-xl);
+        }
+
+        .btn-clear-confirm {
+            background: var(--color-danger-surface);
+            border-color: var(--color-danger-border);
+            color: var(--color-danger-text);
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-bar">
+        <h1>Mockup E — Add pad + sale</h1>
+        <span class="mockup-note">Interactive: press a key to add, per-line steppers, total on the Charge button. <span class="devtools-tag">live mockup</span></span>
+        <button type="button" class="btn btn-secondary mockup-spacer" id="theme-toggle" aria-pressed="false">Toggle theme</button>
+    </div>
+
+    <main class="mockup-shell">
+        <div class="till-e">
+            <!-- LEFT: the add pad (touch-first) + manual/scan fallback -->
+            <section class="pane add-pane" aria-labelledby="add-hd">
+                <form class="add-form" novalidate>
+                    <div class="add-head">
+                        <h2 class="pane-title" id="add-hd">Add to sale</h2>
+                        <div class="qty">
+                            <label for="qty-e" id="qty-label">Qty</label>
+                            <div class="qty-control">
+                                <button type="button" class="qty-step" aria-label="Decrease quantity">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
+                                <input id="qty-e" name="qty" type="number" inputmode="numeric" min="1" value="1" aria-labelledby="qty-label">
+                                <button type="button" class="qty-step" aria-label="Increase quantity">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sku-pad" role="group" aria-label="Add an item at the chosen quantity">
+                        <button type="submit" name="sku" value="A" class="sku-tile">
+                            <span class="tile-name">Apple <span class="tile-sku">A</span></span>
+                            <span class="tile-price">£0.50</span>
+                            <span class="offer-badge">
+                                <svg class="coupon-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                3 for £1.30
+                            </span>
+                        </button>
+                        <button type="submit" name="sku" value="B" class="sku-tile">
+                            <span class="tile-name">Banana <span class="tile-sku">B</span></span>
+                            <span class="tile-price">£0.30</span>
+                            <span class="offer-badge">
+                                <svg class="coupon-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                2 for £0.45
+                            </span>
+                        </button>
+                        <button type="submit" name="sku" value="C" class="sku-tile">
+                            <span class="tile-name">Chocolate <span class="tile-sku">C</span></span>
+                            <span class="tile-price">£0.20</span>
+                        </button>
+                        <button type="submit" name="sku" value="D" class="sku-tile">
+                            <span class="tile-name">Doughnut <span class="tile-sku">D</span></span>
+                            <span class="tile-price">£0.15</span>
+                        </button>
+                    </div>
+
+                    <div class="manual">
+                        <div class="scan-form">
+                            <div class="field">
+                                <label for="scan-e">Scan or type a SKU</label>
+                                <input id="scan-e" name="manual-sku" data-scan autocomplete="off" maxlength="1" placeholder="e.g. A" aria-describedby="scan-alert">
+                            </div>
+                            <button type="submit" class="btn btn-secondary">Add</button>
+                        </div>
+                        <div data-region="alert" id="scan-alert"></div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- RIGHT: the sale receipt + pinned total -->
+            <section class="sale-pane" aria-labelledby="sale-hd">
+                <div class="panel-head sale-head-line">
+                    <h2 id="sale-hd">Current sale</h2>
+                    <span class="sale-count" data-count aria-live="polite"></span>
+                </div>
+                <div class="sale-body" data-region="basket"></div>
+                <div class="total-foot">
+                    <div class="totals" data-region="totals" aria-live="polite"></div>
+                    <div class="total-actions">
+                        <button type="button" class="btn btn-clear" data-action="clear">Clear</button>
+                        <button type="button" class="btn btn-checkout" data-action="checkout">
+                            <span class="checkout-label">Charge</span>
+                            <span class="checkout-amount" data-total>£0.00</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Add confirmation (JS-enhanced). No-JS reloads and the basket confirms. -->
+    <div class="toast" role="status" aria-live="polite" hidden>
+        <span class="toast-icon" aria-hidden="true">✓</span>
+        <span class="toast-msg" data-toast-msg></span>
+        <button type="button" class="toast-dismiss" aria-label="Dismiss notification">✕</button>
+    </div>
+
+    <!-- Confirm before wiping the whole sale. -->
+    <dialog class="confirm" id="clear-confirm" aria-labelledby="confirm-title">
+        <form method="dialog">
+            <h2 id="confirm-title">Clear the whole sale?</h2>
+            <p>This removes <span data-confirm-count>every line</span> from the current sale. It can’t be undone.</p>
+            <div class="confirm-actions">
+                <button type="submit" value="cancel" class="btn btn-secondary" autofocus>Keep sale</button>
+                <button type="submit" value="clear" class="btn btn-clear-confirm">Clear sale</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script>
+        // Theme: ?theme=dark for screenshots, plus the toggle in the bar.
+        (function () {
+            const root = document.documentElement;
+            const theme = new URLSearchParams(location.search).get("theme");
+            root.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+            document.getElementById("theme-toggle").addEventListener("click", (e) => {
+                const dark = root.getAttribute("data-theme") === "dark";
+                root.setAttribute("data-theme", dark ? "light" : "dark");
+                e.currentTarget.setAttribute("aria-pressed", String(!dark));
+            });
+        })();
+    </script>
+    <script src="./e.js"></script>
+</body>
+</html>

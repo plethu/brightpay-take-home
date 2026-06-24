@@ -141,6 +141,11 @@ Current read:
   clear-on-empty.
 * No-JS first. Real form posts for mutations; Interactive Server can sharpen the
   running total.
+* Touch targets are a token, not a guess. A `--touch-target-min` floor of 44px
+  (WCAG 2.5.5 / Apple HIG) drives the SKU keys, both steppers, and the
+  Clear/Charge actions, bumped to 48px under `@media (pointer: coarse)` for
+  phone/tablet glass. Reducing visual padding must not drop a control below that
+  floor -- pin the height to the token and let padding shrink.
 * Styling target: work-tool, compact receipt, clear total, large add targets,
   visible offers. Less SaaS-card, less hardware costume.
 

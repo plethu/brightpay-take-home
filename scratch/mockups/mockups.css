@@ -319,59 +319,87 @@
     padding: 0;
 }
 
+/* A receipt line: name-led info on the left, money right-aligned so line
+ * prices stack with the subtotal / savings / total below. No left rail. */
 .basket-line {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: var(--space-md);
-    padding-block: var(--space-sm);
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: var(--space-sm) var(--space-md);
+    padding-block: var(--space-md);
     border-block-end: var(--border-width) solid var(--color-border);
 }
 
-.basket-line .line-main {
+.basket-line .line-info {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
+    align-items: start;
 }
 
-.basket-line .line-title {
+/* Name carries the weight; the quantity is lighter and muted so it reads as a
+ * multiplier, not part of the name. */
+.basket-line .line-name {
     font-weight: 700;
 }
 
-.basket-line .line-title .sku {
-    font-family: var(--font-mono);
+.basket-line .line-name .line-qty {
+    color: var(--color-text-muted);
+    font-weight: 400;
 }
 
 .basket-line .line-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
 }
 
-.basket-line .amount {
+/* SKU rides along quietly: the codes still matter, but the name leads. */
+.basket-line .line-sku {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+/* Remove is a quiet text control, danger revealed on intent only. */
+.basket-line .line-remove {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.basket-line .line-remove:hover {
+    color: var(--color-danger-text);
+}
+
+.basket-line .line-amounts {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: var(--space-xs);
+    text-align: end;
+}
+
+.basket-line .line-price {
     font-variant-numeric: tabular-nums;
     font-weight: 700;
 }
 
-/* Lines an offer groups together get a quiet accent rail so the relationship
- * between the offer and its items is visible at a glance. */
-.offer-group {
-    padding-inline-start: var(--space-md);
-    border-inline-start: var(--focus-ring-width) solid var(--color-accent);
-}
-
-.offer-group .saving {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-md);
-    padding-block-start: var(--space-xs);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-sm);
-}
-
-/* The money-off figure uses the success token; the leading "−" and "−£" keep
- * the meaning legible without relying on colour. */
-.offer-group .saving .amount {
+/* The money-off figure uses the success token; the leading "−£" keeps the
+ * meaning legible without relying on colour. */
+.basket-line .line-saving {
     color: var(--color-success-text);
+    font-variant-numeric: tabular-nums;
+    font-size: var(--font-size-sm);
     font-weight: 700;
 }
 

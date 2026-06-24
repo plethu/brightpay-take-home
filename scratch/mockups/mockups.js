@@ -15,13 +15,17 @@
     // SPEC pricing, in pence. Offers are the only type the kata defines: buy n
     // for a fixed price.
     const CATALOG = {
-        A: { unit: 50, offer: { label: "3 for £1.30", n: 3, price: 130 } },
-        B: { unit: 30, offer: { label: "2 for £0.45", n: 2, price: 45 } },
-        C: { unit: 20, offer: null },
-        D: { unit: 15, offer: null },
+        A: { name: "Apple", unit: 50, offer: { label: "3 for £1.30", n: 3, price: 130 } },
+        B: { name: "Banana", unit: 30, offer: { label: "2 for £0.45", n: 2, price: 45 } },
+        C: { name: "Chocolate", unit: 20, offer: null },
+        D: { name: "Doughnut", unit: 15, offer: null },
     };
 
     const gbp = (pence) => "£" + (pence / 100).toFixed(2);
+
+    // Coupon/tag glyph for offers. A drawn tag reads as "deal" so the offer's
+    // colour is never the only signal; it pairs with --color-offer-* in CSS.
+    const COUPON_ICON = '<svg class="coupon-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
 
     // Build a basket line, applying the multi-buy offer as many times as it fits.
     function line(sku, qty) {
@@ -46,7 +50,7 @@
         added: {
             label: "Item added",
             lines: [line("A", 3), line("B", 2), line("C", 1), line("D", 1)],
-            scan: "", error: null, status: "Added A. 3 of A in basket.",
+            scan: "", error: null, status: "Added 3 × Apple to the sale.",
         },
         error: {
             label: "Validation error",
@@ -64,20 +68,29 @@
             return `<div class="empty-state"><strong>No items yet</strong>${emptyHint}</div>`;
         }
         const items = state.lines.map((l) => {
-            const grouped = l.offer ? " offer-group" : "";
-            const badge = l.offer
-                ? `<span class="offer-badge">${l.offer.label} applied ×${l.offer.times}</span>`
-                : "";
-            const meta = l.offer
-                ? `<span class="line-meta saving"><span>was ${gbp(l.offer.basePence)}</span><span class="amount">−${gbp(l.offer.savingPence)}</span></span>`
-                : `<span class="line-meta">${gbp(l.unit)} each</span>`;
-            return `<li class="basket-line${grouped}">
-                <div class="line-main">
-                    <span class="line-title"><span class="sku">${l.sku}</span> × ${l.qty}</span>
-                    ${badge}${meta}
+            const name = CATALOG[l.sku].name;
+            // Meta line: SKU chip, then either the applied offer (coupon tag) or
+            // the unit price when a plain line has more than one of an item.
+            const offerOrEach = l.offer
+                ? `<span class="offer-badge">${COUPON_ICON}${l.offer.label}</span>`
+                : (l.qty > 1 ? `<span class="line-each">${gbp(l.unit)} each</span>` : "");
+            const was = l.offer ? `<span class="line-was">was ${gbp(l.offer.basePence)}</span>` : "";
+            const saving = l.offer ? `<span class="line-saving">−${gbp(l.offer.savingPence)}</span>` : "";
+            // The meta line only appears when it carries something (an offer, or a
+            // unit price on a multi-item plain line); otherwise it's omitted so a
+            // lone SKU never floats on its own row.
+            const metaInner = `${offerOrEach}${was}`;
+            const meta = metaInner ? `<p class="line-meta">${metaInner}</p>` : "";
+            return `<li class="basket-line">
+                <div class="line-info">
+                    <p class="line-name">${name} <span class="line-sku">${l.sku}</span> <span class="line-qty">× ${l.qty}</span></p>
+                    ${meta}
+                    <form><button type="submit" class="line-remove" aria-label="Remove ${name}">Remove</button></form>
                 </div>
-                <span class="amount">${gbp(l.linePence)}</span>
-                <form><button type="submit" class="btn btn-quiet" aria-label="Remove ${l.sku}">Remove</button></form>
+                <div class="line-amounts">
+                    <span class="line-price">${gbp(l.linePence)}</span>
+                    ${saving}
+                </div>
             </li>`;
         }).join("");
         return `<ul class="basket">${items}</ul>`;
