@@ -23,6 +23,8 @@ just up
 ```
 
 `just up` starts SQL Server and the Blazor app, clears the terminal, and prints some helpers for development.
+It leaves `dotnet watch` running in the web container. Use `just watch` when
+you want to keep the foreground terminal attached to the watcher logs.
 
 Docker is the default local container runtime. To use Podman instead, set
 `CONTAINER_RUNTIME=podman` in `.env` after confirming `podman-compose` works on

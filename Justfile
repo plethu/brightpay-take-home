@@ -108,6 +108,10 @@ up: down db-up
     {{ compose }} up --detach web
     dotnet run --project {{ tooling_project }} -- dev-dashboard
 
+# Start the development runtime and follow the web watcher logs.
+watch: up
+    {{ compose }} logs --follow web
+
 # Start SQL Server and the web app in the background.
 up-detached: down db-up
     {{ compose }} up --detach web
