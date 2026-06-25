@@ -85,6 +85,18 @@ public sealed class CartPageTests : BunitContext
     }
 
     [Fact]
+    public void OfferBadgeRendersCouponIconAlongsideLabel()
+    {
+        IRenderedComponent<OfferBadge> component =
+            Render<OfferBadge>(parameters => parameters
+            .Add(badge => badge.Label, "3 for £1.30"));
+
+        AngleSharp.Dom.IElement badge = component.Find(".offer-badge");
+        badge.QuerySelector("svg.offer-coupon[aria-hidden='true']").Should().NotBeNull();
+        badge.TextContent.Should().Contain("3 for £1.30");
+    }
+
+    [Fact]
     public void CheckoutRendersAddedToastFromFeedbackQuery()
     {
         NavigationManager navigation = Services.GetRequiredService<NavigationManager>();

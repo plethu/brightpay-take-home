@@ -19,7 +19,9 @@
             <input type="hidden" name="submitted" value="true">
             <button type="submit" class="btn btn-checkout" data-action="checkout" disabled="@Totals.IsEmpty" @onclick="@OnCharge" @onclick:preventDefault="true">
                 <span class="checkout-label">@Localizer["CheckoutCharge"]</span>
-                <span class="checkout-amount">@Totals.Total</span>
+                @* Keyed on the total so a change remounts the node and replays amount-pulse — the no-JS
+                   twin of the removed pulse(.checkout-amount). *@
+                <span @key="@Totals.Total" class="checkout-amount">@Totals.Total</span>
             </button>
         </EditForm>
     </div>

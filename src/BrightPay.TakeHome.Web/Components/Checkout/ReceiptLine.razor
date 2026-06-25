@@ -3,9 +3,16 @@
 <li class="sale-line @(IsLeaving ? "sale-line-leaving" : null)" data-sku="@Line.Sku" data-quantity="@Line.Quantity" data-offer-active="@(Line.OfferLabel is not null ? "true" : "false")">
     <div class="line-info">
         <p class="line-name">@Line.Name <span class="line-sku">@Line.Sku</span></p>
+        @* Conditionally rendered, so the node is created exactly when the offer becomes eligible and
+           plays offer-in. When the offer drops, LeavingOffer carries the previous label so a ghost can
+           collapse out (offer-exit) before the page clears it — the no-JS twin of animateOfferOut. *@
         @if (Line.OfferLabel is not null)
         {
-            <p class="line-meta"><span class="offer-badge">@Line.OfferLabel</span></p>
+            <p class="line-meta"><OfferBadge Label="@Line.OfferLabel" /></p>
+        }
+        else if (LeavingOffer?.OfferLabel is { } leavingLabel)
+        {
+            <p class="line-meta offer-exit-ghost" aria-hidden="true"><OfferBadge Label="@leavingLabel" /></p>
         }
     </div>
     <QuantityStepper Sku="@Line.Sku" Name="@Line.Name" Quantity="@Line.Quantity" OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />
@@ -14,6 +21,10 @@
         @if (Line.PreOfferTotal is not null)
         {
             <span class="line-was">@Line.PreOfferTotal</span>
+        }
+        else if (LeavingOffer?.PreOfferTotal is { } leavingWas)
+        {
+            <span class="line-was offer-exit-ghost" aria-hidden="true">@leavingWas</span>
         }
     </div>
 </li>
@@ -24,6 +35,11 @@
 
     [Parameter]
     public bool IsLeaving { get; set; }
+
+    // The line's previous projection, supplied for the one render after its offer stops applying, so the
+    // dropped offer badge and struck price can collapse out before the page clears them.
+    [Parameter]
+    public CheckoutReceiptLineView? LeavingOffer { get; set; }
 
     [Parameter]
     public EventCallback<string> OnIncrement { get; set; }

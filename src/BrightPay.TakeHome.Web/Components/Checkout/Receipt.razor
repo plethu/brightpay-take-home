@@ -14,7 +14,9 @@
         <ul class="sale-list">
             @foreach (CheckoutReceiptLineView line in Lines)
             {
-                <ReceiptLine @key="@line.Sku" Line="@line" OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />
+                <ReceiptLine @key="@line.Sku" Line="@line"
+                             LeavingOffer="@(LeavingOffers.GetValueOrDefault(line.Sku))"
+                             OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />
             }
             @foreach (CheckoutReceiptLineView line in LeavingLines)
             {
@@ -30,6 +32,11 @@
 
     [Parameter]
     public IReadOnlyList<CheckoutReceiptLineView> LeavingLines { get; set; } = [];
+
+    // Lines (keyed by SKU) whose offer just stopped applying, so the badge can collapse out.
+    [Parameter]
+    public IReadOnlyDictionary<string, CheckoutReceiptLineView> LeavingOffers { get; set; } =
+        new Dictionary<string, CheckoutReceiptLineView>();
 
     [Parameter]
     public bool IsEmpty { get; set; }

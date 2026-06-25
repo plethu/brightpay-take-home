@@ -45,7 +45,7 @@
                     <span class="tile-price">@item.UnitPrice</span>
                     @if (item.OfferLabel is not null)
                     {
-                        <span class="offer-badge">@item.OfferLabel</span>
+                        <OfferBadge Label="@item.OfferLabel" />
                     }
                 </button>
             }

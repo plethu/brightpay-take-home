@@ -20,7 +20,9 @@
 
 @if (_model is not null)
 {
-    <CheckoutToast Message="@_notifications.Toast" IsLeaving="@_notifications.ToastLeaving" OnDismiss="@DismissToastAsync" />
+    <CheckoutToast Message="@_notifications.Toast" IsLeaving="@_notifications.ToastLeaving"
+                   Generation="@_notifications.ToastGeneration" Entrance="@_notifications.ToastEntrance"
+                   OnDismiss="@DismissToastAsync" />
 
     <section class="checkout-page" data-checkout-page aria-label="@Localizer["AppName"]">
         <div class="till-e">
@@ -42,6 +44,7 @@
                 </div>
                 <Receipt Lines="@_model.Lines"
                          LeavingLines="@([.._leavingLines.Values])"
+                         LeavingOffers="@_leavingOffers"
                          IsEmpty="@(_model.Totals.IsEmpty && _leavingLines.Count == 0)"
                          OnIncrement="@IncrementAsync"
                          OnDecrement="@DecrementAsync" />
@@ -69,6 +72,11 @@
     private CheckoutNotificationController _notifications = null!;
     private PersistingComponentStateSubscription _persistingSubscription;
     private readonly Dictionary<string, CheckoutReceiptLineView> _leavingLines =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    // SKU -> the line as it was just before its offer stopped applying, kept for one removal window so
+    // ReceiptLine can collapse the dropped offer badge/struck price out.
+    private readonly Dictionary<string, CheckoutReceiptLineView> _leavingOffers =
         new(StringComparer.OrdinalIgnoreCase);
 
     // Mirrors the receipt line-leave animation. Source of truth is app.css --motion-base (200ms),
@@ -179,6 +187,7 @@
         Project();
 
         TrackLeavingLines(previousLines);
+        TrackLeavingOffers(previousLines);
 
         _ = _notifications.ClearErrorAsync();
         switch (feedback)
@@ -217,6 +226,42 @@
     {
         await Task.Delay(LineLeaveDelay).ConfigureAwait(true);
         _leavingLines.Remove(sku);
+        await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+    }
+
+    private void TrackLeavingOffers(IReadOnlyList<CheckoutReceiptLineView>? previousLines)
+    {
+        if (previousLines is null || _model is null)
+        {
+            return;
+        }
+
+        Dictionary<string, CheckoutReceiptLineView> previousBySku =
+            previousLines.ToDictionary(l => l.Sku, StringComparer.OrdinalIgnoreCase);
+
+        foreach (CheckoutReceiptLineView line in _model.Lines)
+        {
+            bool offerJustDropped = line.OfferLabel is null
+                && previousBySku.TryGetValue(line.Sku, out CheckoutReceiptLineView? previous)
+                && previous.OfferLabel is not null;
+
+            if (offerJustDropped)
+            {
+                _leavingOffers[line.Sku] = previousBySku[line.Sku];
+                _ = RemoveLeavingOfferAsync(line.Sku);
+            }
+            else if (line.OfferLabel is not null)
+            {
+                // Offer is back (or never left): cancel any ghost still collapsing for this SKU.
+                _leavingOffers.Remove(line.Sku);
+            }
+        }
+    }
+
+    private async Task RemoveLeavingOfferAsync(string sku)
+    {
+        await Task.Delay(LineLeaveDelay).ConfigureAwait(true);
+        _leavingOffers.Remove(sku);
         await InvokeAsync(StateHasChanged).ConfigureAwait(true);
     }
 

@@ -1,0 +1,16 @@
+/* Plays only when the keyed .checkout-amount node remounts (a total change); see CheckoutTotals.razor.
+   Reduced motion is handled globally in app.css. */
+.checkout-amount {
+    animation: amount-pulse var(--motion-base) var(--easing-standard);
+}
+
+@keyframes amount-pulse {
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale(1.12);
+    }
+}

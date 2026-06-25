@@ -5,7 +5,10 @@
 
 @if (!string.IsNullOrWhiteSpace(Message))
 {
-    <div class="toast @(IsLeaving ? "toast-exit" : null)" aria-hidden="true">
+    @* Keyed on Generation so each visible update remounts this node and the browser replays the
+       Entrance animation (slide-in / pulse / none). Leaving keeps the key stable so the existing
+       node animates out instead of being torn down instantly. *@
+    <div @key="Generation" class="toast @EntranceClass @(IsLeaving ? "toast-exit" : null)" aria-hidden="true">
         <span class="toast-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
                 <path d="m5 12 4 4L19 6" />
@@ -35,5 +38,18 @@
     public bool IsLeaving { get; set; }
 
     [Parameter]
+    public int Generation { get; set; }
+
+    [Parameter]
+    public ToastEntrance Entrance { get; set; }
+
+    [Parameter]
     public EventCallback OnDismiss { get; set; }
+
+    private string? EntranceClass => Entrance switch
+    {
+        ToastEntrance.Enter => "toast-enter",
+        ToastEntrance.Pulse => "toast-pulse",
+        _ => null,
+    };
 }

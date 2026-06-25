@@ -27,6 +27,12 @@ internal sealed class CheckoutNotificationController : IDisposable
 
     public string? Toast { get; internal set; }
     public bool ToastLeaving { get; private set; }
+
+    // Bumped every time a visible toast (re)renders. The markup keys the toast element on this, so
+    // Blazor remounts the node and the browser replays ToastEntrance's CSS animation — the no-JS way
+    // to retrigger an animation in place (the old .razor.js pulseToast call did this via JS interop).
+    public int ToastGeneration { get; private set; }
+    public ToastEntrance ToastEntrance { get; private set; } = ToastEntrance.Enter;
     public string? ErrorMessage { get; internal set; }
     public bool ErrorIsInvalid { get; private set; }
     public bool ErrorLeaving { get; private set; }
@@ -45,6 +51,7 @@ internal sealed class CheckoutNotificationController : IDisposable
 
     public void ShowSuccessToast(string message)
     {
+        bool wasVisible = Toast is not null && !ToastLeaving;
         _debounce?.Cancel();
         _debounce?.Dispose();
         _debounce = null;
@@ -53,6 +60,10 @@ internal sealed class CheckoutNotificationController : IDisposable
         _dismiss?.Dispose();
         Toast = message;
         ToastLeaving = false;
+
+        // One-off messages (charge/clear) never pulse: slide in when fresh, swap in place when one is
+        // already up. Mirrors the mockup's showToast(pulse: false).
+        SetEntrance(wasVisible ? ToastEntrance.None : ToastEntrance.Enter);
 
         CancellationTokenSource dismiss = new();
         _dismiss = dismiss;
@@ -71,13 +82,17 @@ internal sealed class CheckoutNotificationController : IDisposable
             ? (existing with { Quantity = existing.Quantity + quantity })
             : new ToastBatchLine(name, quantity);
 
+        // Mirrors the mockup's notifyAdd: a spaced add onto a visible toast flushes immediately and
+        // pulses; a bursty add (within the debounce window) folds in silently on a trailing flush; an
+        // add onto no toast waits out the debounce and then slides in.
         TimeSpan elapsed = _timeProvider.GetUtcNow() - _lastToastAt;
         bool visible = Toast is not null && !ToastLeaving;
+        bool pulse = visible && elapsed >= ToastDebounceDelay;
         TimeSpan delay = visible
             ? elapsed >= ToastDebounceDelay ? TimeSpan.Zero : ToastDebounceDelay - elapsed
             : ToastDebounceDelay;
 
-        StartDebounce(delay);
+        StartDebounce(delay, pulse);
     }
 
     public async Task DismissToastAsync()
@@ -159,16 +174,22 @@ internal sealed class CheckoutNotificationController : IDisposable
         _errorClear?.Dispose();
     }
 
-    private void StartDebounce(TimeSpan delay)
+    private void SetEntrance(ToastEntrance entrance)
+    {
+        ToastEntrance = entrance;
+        ToastGeneration++;
+    }
+
+    private void StartDebounce(TimeSpan delay, bool pulse)
     {
         _debounce?.Cancel();
         _debounce?.Dispose();
         CancellationTokenSource debounce = new();
         _debounce = debounce;
-        _ = FlushDebounceAsync(debounce, delay);
+        _ = FlushDebounceAsync(debounce, delay, pulse);
     }
 
-    private async Task FlushDebounceAsync(CancellationTokenSource debounce, TimeSpan delay)
+    private async Task FlushDebounceAsync(CancellationTokenSource debounce, TimeSpan delay, bool pulse)
     {
         try
         {
@@ -187,6 +208,7 @@ internal sealed class CheckoutNotificationController : IDisposable
             return;
         }
 
+        bool wasVisible = Toast is not null && !ToastLeaving;
         _debounce = null;
         if (_dismiss is { } prevDismiss)
         {
@@ -194,10 +216,14 @@ internal sealed class CheckoutNotificationController : IDisposable
         }
 
         _dismiss?.Dispose();
+        // The batch is NOT cleared here: it accumulates across every flush for as long as the toast
+        // stays up, so successive adds grow the same "Added N × …" count in place (cleared only when
+        // the toast finally hides, in HideToastAsync). Clearing per flush would restart the count at 1
+        // on each click — a new toast per add instead of an incrementing one.
         Toast = BuildBatchMessage();
         ToastLeaving = false;
+        SetEntrance(wasVisible ? (pulse ? ToastEntrance.Pulse : ToastEntrance.None) : ToastEntrance.Enter);
         _lastToastAt = _timeProvider.GetUtcNow();
-        _batch.Clear();
 
         CancellationTokenSource dismiss = new();
         _dismiss = dismiss;
@@ -256,6 +282,8 @@ internal sealed class CheckoutNotificationController : IDisposable
             Toast = null;
             ToastLeaving = false;
             _dismiss = null;
+            // End of this toast's life: drop the accumulated count so the next add starts a fresh toast.
+            _batch.Clear();
             await _onStateChanged().ConfigureAwait(true);
         }
     }

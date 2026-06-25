@@ -35,3 +35,6 @@ E2E suite; see the skill's "Anti-patterns — do not reintroduce" section):
 - [ ] No package was added without a wired call site (ReferenceTrimmer passes).
 - [ ] `@rendermode` is scoped to the smallest subtree that needs it.
 - [ ] Interactive state survives a page reload.
+- [ ] Micro-animations (enter/leave/pulse) still fire, verified in a running
+      browser — a markup-only diff hides lost or broken motion because the rendered
+      value is unchanged. Follow the skill's "Interaction animations" flows.

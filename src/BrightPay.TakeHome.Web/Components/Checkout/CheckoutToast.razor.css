@@ -15,11 +15,25 @@
     color: var(--color-text);
     box-shadow: var(--shadow-sm);
     font-weight: 700;
+}
+
+/* A toast appearing on an empty corner slides in. Driven by the keyed remount in CheckoutToast.razor,
+   not by the base class, so an in-place update (which carries .toast-pulse or no animation class
+   instead) doesn't replay the entrance. */
+.toast-enter {
     animation: checkout-toast-in var(--motion-base) var(--easing-standard);
 }
 
+/* A spaced add coalesced onto a visible toast pulses in place — the same feedback the removed
+   .razor.js pulseToast gave, now pure CSS retriggered by the keyed remount. */
+.toast-pulse {
+    animation: checkout-toast-pulse var(--motion-base) var(--easing-standard);
+}
+
+/* Listed after enter/pulse so that when a leaving node still carries its entrance class, this
+   equal-specificity rule wins the `animation` shorthand and the exit plays.
+   Duration must match CheckoutNotificationController.ToastExitDelay (→ --motion-toast-exit token). */
 .toast-exit {
-    /* Duration must match CheckoutNotificationController.ToastExitDelay (→ --motion-toast-exit token). */
     animation: checkout-toast-out var(--motion-toast-exit) var(--easing-standard) forwards;
 }
 
@@ -80,5 +94,16 @@
     to {
         opacity: 0;
         transform: translateY(var(--space-sm));
+    }
+}
+
+@keyframes checkout-toast-pulse {
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale(1.04);
     }
 }

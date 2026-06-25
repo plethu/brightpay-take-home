@@ -70,6 +70,40 @@ suite.
 - `@rendermode` defaults to none. Add interactivity to the smallest subtree that
   needs it; a page-level render mode needs a one-line justification.
 
+## Interaction animations
+
+In our interactive Server render mode Blazor owns the DOM, so micro-animations
+(enter, exit, pulse) are driven by render state + CSS, never by JS that pokes the
+DOM. Three flows cover everything the checkout needs; reach for these before
+anything else, and verify them in a running browser (a markup-only diff hides lost
+or broken motion because the rendered value is unchanged).
+
+- Pulse on change: put `@key="@value"` on the node showing the value and the
+  animation on its class. A changed key makes Blazor discard and re-create the
+  node, which restarts the CSS animation; an unchanged render reuses the node and
+  stays still. The animated node must be block / flex-item / grid-item /
+  inline-block — `transform` is silently ignored on a non-replaced inline element,
+  so a bare `<span>` will not scale. Reference: `.line-qty`, `.line-price`,
+  `.checkout-amount`, `CheckoutToast`.
+- Enter on activation: render the node only while its state holds (`@if`). Blazor
+  creates the element exactly on the false→true transition, so an enter animation
+  on its class plays once, then. Reference: offer badge `offer-in`.
+- Exit on deactivation: the element is gone the instant the state clears, so there
+  is nothing left to animate out. Keep a ghost of the prior state for one removal
+  window, collapse it with CSS, then drop it — the page tracks the leaving item and
+  re-renders after a delay matching the animation. Reference: `_leavingLines` /
+  `_leavingOffers` with `line-leave` / `offer-exit`.
+
+Coalescing (e.g. the add toast): accumulate the batch in component state across
+the whole visible lifetime and re-render the running total in place; reset the
+batch only when the surface actually hides, not on each update — clearing per
+update restarts the count and reads as a new toast per click.
+
+Prerendered nodes are matched and reused on hydration, so these do not spuriously
+replay on initial load; a key/state change during an interactive update is what
+triggers them. Every animation needs a `prefers-reduced-motion` path (handled
+globally in `app.css`).
+
 ## Accessibility
 
 - Aim UI work at WCAG 2.2. Automated checks are required, but manual review is

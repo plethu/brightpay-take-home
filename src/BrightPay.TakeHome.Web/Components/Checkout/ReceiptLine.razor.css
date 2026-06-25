@@ -8,6 +8,26 @@
     animation: line-leave var(--motion-base) var(--easing-standard) forwards;
 }
 
+/* The price is keyed on its value in ReceiptLine.razor, so a charged-amount change remounts this node
+   and replays the pulse (no-JS twin of the removed pulse(.line-price)). */
+.line-price {
+    animation: price-pulse var(--motion-base) var(--easing-standard);
+}
+
+/* Offer badge + struck price are rendered only while the offer applies, so the node is created exactly
+   when the offer becomes eligible and plays offer-in. */
+.line-meta,
+.line-was {
+    animation: offer-in var(--motion-base) var(--easing-standard);
+}
+
+/* A ghost of the dropped offer, kept for one removal window (CheckoutPage.LineLeaveDelay → --motion-base).
+   Listed after .line-meta/.line-was so this equal-specificity rule wins the `animation` shorthand. */
+.offer-exit-ghost {
+    overflow: hidden;
+    animation: offer-exit var(--motion-base) var(--easing-standard) forwards;
+}
+
 @keyframes line-enter {
     from {
         opacity: 0;
@@ -32,9 +52,52 @@
     }
 }
 
+@keyframes price-pulse {
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale(1.12);
+    }
+}
+
+@keyframes offer-in {
+    from {
+        opacity: 0;
+        transform: translateY(-0.25rem) scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* max-block-size (not block-size: auto, which is not animatable) collapses the ghost so the line does
+   not jump while it fades; the cap is comfortably above either ghost element's height. */
+@keyframes offer-exit {
+    from {
+        opacity: 1;
+        max-block-size: 3rem;
+        transform: none;
+    }
+
+    to {
+        opacity: 0;
+        max-block-size: 0;
+        transform: translateY(-0.25rem) scale(0.92);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .sale-line,
-    .sale-line-leaving {
+    .sale-line-leaving,
+    .line-price,
+    .line-meta,
+    .line-was,
+    .offer-exit-ghost {
         animation: none;
     }
 }

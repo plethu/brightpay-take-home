@@ -19,7 +19,9 @@
             }
         </button>
     </EditForm>
-    <span class="line-qty" aria-live="polite">@Quantity</span>
+    @* Keyed on Quantity so a change remounts the node and replays qty-pulse — the no-JS equivalent of
+       the removed pulse(.line-qty). Unchanged renders reuse the node and stay still. *@
+    <span @key="@Quantity" class="line-qty" aria-live="polite">@Quantity</span>
     <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment">
         <input type="hidden" name="sku" value="@Sku">
         <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]" @onclick="@(() => OnIncrement.InvokeAsync(Sku))" @onclick:preventDefault="true">+</button>
