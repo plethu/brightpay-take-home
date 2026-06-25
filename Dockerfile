@@ -17,9 +17,6 @@ RUN dotnet publish src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj \
     --configuration Release \
     --no-restore \
     --output /app
-RUN mkdir -p /app/wwwroot/_framework \
-    && cp "$(find / -path '*/microsoft.aspnetcore.app.internal.assets/*/_framework/blazor.web.js' -print -quit)" /app/wwwroot/_framework/ \
-    && cp "$(find / -path '*/microsoft.aspnetcore.app.internal.assets/*/_framework/blazor.server.js' -print -quit)" /app/wwwroot/_framework/
 
 # Runtime stage.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
