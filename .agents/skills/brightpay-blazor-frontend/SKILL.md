@@ -179,8 +179,8 @@ globally in `app.css`).
 ## Verification
 
 ```bash
-just test-components
-just test-e2e-host
+just test   # unit + component (bUnit) tests
+just e2e    # containerized Playwright browser flows + Lighthouse
 ```
 
 If browser dependencies are missing, record the install command and the unrun

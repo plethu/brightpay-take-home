@@ -5,8 +5,8 @@ solution := "BrightPay.TakeHome.slnx"
 web_project := "src/BrightPay.TakeHome.Web/BrightPay.TakeHome.Web.csproj"
 unit_tests := "tests/BrightPay.TakeHome.Tests.Unit/BrightPay.TakeHome.Tests.Unit.csproj"
 component_tests := "tests/BrightPay.TakeHome.Tests.Components/BrightPay.TakeHome.Tests.Components.csproj"
-e2e_project := "tests/BrightPay.TakeHome.Tests.E2E/BrightPay.TakeHome.Tests.E2E.csproj"
 tooling_project := "tools/BrightPay.TakeHome.Tooling/BrightPay.TakeHome.Tooling.csproj"
+
 container_runtime := env_var_or_default("CONTAINER_RUNTIME", "docker")
 compose := if container_runtime == "docker" { "docker compose" } else { "podman-compose" }
 tofu := env_var_or_default("TOFU", "mise exec -- tofu")
@@ -17,187 +17,189 @@ host_checkout_connection := env_var_or_default(
     "Server=127.0.0.1," + sql_host_port + ";Database=BrightPayTakeHome;User Id=sa;Password=" + sql_server_password + ";TrustServerCertificate=True",
 )
 
-export DOTNET_CLI_HOME := ".dotnet"
+host_uid := `id -u`
+host_gid := `id -g`
+
+export HOST_UID := host_uid
+export HOST_GID := host_gid
+export SQL_HOST_PORT := sql_host_port
+export SQL_SERVER_PASSWORD := sql_server_password
+export ConnectionStrings__CheckoutDatabase := host_checkout_connection
 export DOTNET_CLI_TELEMETRY_OPTOUT := "1"
 export DOTNET_NOLOGO := "1"
-export ConnectionStrings__CheckoutDatabase := host_checkout_connection
-export SQL_SERVER_PASSWORD := sql_server_password
 
-# Verify that repo toolchain pins agree.
-toolchain-check:
-    dotnet run --project {{ tooling_project }} -- check-toolchain
+dotnet := compose + " run --rm --no-deps sdk dotnet"
+dotnet_with_db := compose + " run --rm sdk dotnet"
 
-# Restore NuGet packages.
-restore: toolchain-check
-    dotnet restore {{ solution }}
+# List available recipes.
+default:
+    @just --list
 
-# Build the solution in Release mode.
-build: restore
-    dotnet build {{ solution }} --configuration Release --no-restore
+# ---------------------------------------------------------------------------
+# dev — local runtime lifecycle
+# ---------------------------------------------------------------------------
 
-# Run unit tests.
-test-unit: build
-    dotnet test {{ unit_tests }} --configuration Release --no-build
+# Start the database + web watcher and print the dev dashboard.
+[group('dev')]
+dev: up
+    {{ dotnet_with_db }} run --project {{ tooling_project }} -- dev-dashboard
 
-# Run unit tests matching a class, method, or namespace substring.
-test-unit-filter filter: build
-    dotnet test {{ unit_tests }} --configuration Release --no-build --filter "FullyQualifiedName~{{ filter }}"
-
-# Run bUnit component tests.
-test-components: build
-    dotnet test {{ component_tests }} --configuration Release --no-build
-
-# Run bUnit component tests matching a class, method, or namespace substring.
-test-components-filter filter: build
-    dotnet test {{ component_tests }} --configuration Release --no-build --filter "FullyQualifiedName~{{ filter }}"
-
-# Run containerized Playwright E2E tests.
-test-e2e: db-up
-    {{ compose }} up --detach --build app
-    {{ compose }} run --rm e2e
-
-# Run E2E tests against E2E_BASE_URL.
-test-e2e-host:
-    dotnet test {{ e2e_project }} --configuration Release --filter "Category=E2E"
-
-# Run E2E tests against E2E_BASE_URL matching a class, method, or namespace substring.
-test-e2e-host-filter filter:
-    dotnet test {{ e2e_project }} --configuration Release --filter "Category=E2E&FullyQualifiedName~{{ filter }}"
-
-# Run all tests.
-test: test-unit test-components test-e2e
-
-# Restore local .NET tools inside the running web container.
-tools-restore-web:
-    {{ compose }} exec web dotnet tool restore
-
-# Apply EF Core migrations to the local checkout database.
-db-update:
-    dotnet tool run dotnet-ef database update --project {{ web_project }} --startup-project {{ web_project }}
-
-# Add an EF Core migration on the host.
-db-migration name:
-    dotnet tool run dotnet-ef migrations add {{ name }} --project {{ web_project }} --startup-project {{ web_project }} --output-dir Data/Migrations
-
-# Generate an idempotent SQL migration script.
-db-script:
-    dotnet tool run dotnet-ef migrations script --idempotent --project {{ web_project }} --startup-project {{ web_project }}
-
-# Apply EF Core migrations inside the running web container.
-db-update-web: tools-restore-web
-    {{ compose }} exec web dotnet tool run dotnet-ef database update --project {{ web_project }} --startup-project {{ web_project }}
-
-# Add an EF Core migration inside the running web container.
-db-migration-web name: tools-restore-web
-    {{ compose }} exec web dotnet tool run dotnet-ef migrations add {{ name }} --project {{ web_project }} --startup-project {{ web_project }} --output-dir Data/Migrations
-
-# Generate an idempotent SQL migration script inside the running web container.
-db-script-web: tools-restore-web
-    {{ compose }} exec web dotnet tool run dotnet-ef migrations script --idempotent --project {{ web_project }} --startup-project {{ web_project }}
-
-# Run unit tests inside the running web container.
-test-unit-web:
-    {{ compose }} exec web dotnet test {{ unit_tests }} --configuration Release
-
-# Run unit tests inside the running web container, filtered by substring.
-test-unit-filter-web filter:
-    {{ compose }} exec web dotnet test {{ unit_tests }} --configuration Release --filter "FullyQualifiedName~{{ filter }}"
-
-# Run bUnit component tests inside the running web container.
-test-components-web:
-    {{ compose }} exec web dotnet test {{ component_tests }} --configuration Release
-
-# Run bUnit component tests inside the running web container, filtered by substring.
-test-components-filter-web filter:
-    {{ compose }} exec web dotnet test {{ component_tests }} --configuration Release --filter "FullyQualifiedName~{{ filter }}"
-
-# Verify .NET formatting.
-fmt: restore
-    dotnet format {{ solution }} --verify-no-changes
-
-# Apply .NET formatting.
-fmt-fix:
-    dotnet format {{ solution }}
-
-# Run the full quality gate.
-check: test fmt infra-check
-
-# Initialize OpenTofu without a backend.
-infra-init:
-    {{ tofu }} -chdir=infra/opentofu init -backend=false
-
-# Verify OpenTofu formatting.
-infra-fmt:
-    {{ tofu }} -chdir=infra/opentofu fmt -check -recursive
-
-# Apply OpenTofu formatting.
-infra-fmt-fix:
-    {{ tofu }} -chdir=infra/opentofu fmt -recursive
-
-# Validate OpenTofu configuration.
-infra-validate: infra-init
-    {{ tofu }} -chdir=infra/opentofu validate
-
-# Run OpenTofu formatting and validation checks.
-infra-check: infra-fmt infra-validate
-
-# Run host-side checks without containerized E2E.
-check-host: test-unit test-components fmt infra-check
-
-# Start the local development runtime.
-run: up
-
-# Start SQL Server.
-db-up:
-    {{ compose }} up --detach db
-
-# Start SQL Server and the web app, then print local development links.
-up: down db-up
+# Start the database + web watcher in the background and return.
+[group('dev')]
+up: db-up
     {{ compose }} up --detach web
-    dotnet run --project {{ tooling_project }} -- dev-dashboard
 
-# Start the development runtime and follow the web watcher logs.
-watch: up
-    {{ compose }} logs --follow web
-
-# Start SQL Server and the web app in the background.
-up-detached: down db-up
-    {{ compose }} up --detach web
-    dotnet run --project {{ tooling_project }} -- dev-dashboard
-
-# Stop local containers.
-down:
-    {{ compose }} down --remove-orphans
-
-# Restart the local development runtime.
-restart: up
-
-# Follow web app logs.
+# Follow the web app logs.
+[group('dev')]
 logs:
     {{ compose }} logs --follow web
 
-# Open a shell in the web container.
-shell: shell-web
+# Restart local containers.
+[group('dev')]
+restart: down up
 
-# Open a shell in the web container.
-shell-web:
-    {{ compose }} exec web sh
-
-# Open a shell in the SQL Server container.
-shell-db:
-    {{ compose }} exec db bash
+# Stop and remove local containers.
+[group('dev')]
+down:
+    {{ compose }} down --remove-orphans
 
 # Show local container status.
+[group('dev')]
 ps:
     {{ compose }} ps
 
-# Remove generated build and test artifacts.
-clean:
-    dotnet clean {{ solution }} --configuration Debug
-    dotnet clean {{ solution }} --configuration Release
-    git clean -fdX -e .env -e .dotnet/ -e .nuget/ -e .vscode/ -e .idea/ -e .cursor/ -e .zed/ -e .claude/
+# Open a shell in a container: `just shell` (disposable sdk), `web`, or `db`.
+[group('dev')]
+shell where="sdk": cache-dirs
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case '{{ where }}' in
+        sdk) {{ compose }} run --rm --no-deps sdk sh ;;
+        web) {{ compose }} exec web sh ;;
+        db)  {{ compose }} exec db bash ;;
+        *)   echo "unknown shell target '{{ where }}' (use: sdk | web | db)" >&2; exit 2 ;;
+    esac
 
-# Check NuGet package freshness.
-outdated:
-    dotnet tool restore
-    dotnet outdated
+# ---------------------------------------------------------------------------
+# test — build and tests
+# ---------------------------------------------------------------------------
+
+# Build the solution (Release) in the SDK container.
+[group('test')]
+build: restore
+    {{ dotnet }} build {{ solution }} --configuration Release --no-restore
+
+# Run unit + component tests. Optional FQN filter: `just test CheckoutTotals`.
+[group('test')]
+test filter="": build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    args=(--configuration Release --no-build)
+    if [ -n '{{ filter }}' ]; then
+        args+=(--filter "FullyQualifiedName~{{ filter }}")
+    fi
+    {{ dotnet }} test {{ unit_tests }} "${args[@]}"
+    {{ dotnet }} test {{ component_tests }} "${args[@]}"
+
+# Run the containerized Playwright + Lighthouse suite against the production app image.
+[group('test')]
+e2e: cache-dirs db-up
+    {{ compose }} up --detach --build app
+    {{ compose }} run --rm e2e
+
+# ---------------------------------------------------------------------------
+# check — quality gates
+# ---------------------------------------------------------------------------
+
+# Fast quality gate: build, tests, format check, infra (no E2E).
+[group('check')]
+check: test fmt-check infra
+
+# Full quality gate including E2E. Required for task sign-off.
+[group('check')]
+check-all: check e2e
+
+# Auto-format C# and OpenTofu.
+[group('check')]
+fmt: restore
+    {{ dotnet }} format {{ solution }}
+    {{ tofu }} -chdir=infra/opentofu fmt -recursive
+
+# Verify repo toolchain version pins agree.
+[group('check')]
+toolchain-check: cache-dirs
+    {{ dotnet }} run --project {{ tooling_project }} -- check-toolchain
+
+# Check OpenTofu formatting and validate the configuration.
+[group('check')]
+infra: infra-init
+    {{ tofu }} -chdir=infra/opentofu fmt -check -recursive
+    {{ tofu }} -chdir=infra/opentofu validate
+
+# ---------------------------------------------------------------------------
+# database — SQL Server + EF Core migrations
+# ---------------------------------------------------------------------------
+
+# Start SQL Server in the background.
+[group('database')]
+db-up: cache-dirs
+    {{ compose }} up --detach db
+
+# Apply EF Core migrations to the local checkout database.
+[group('database')]
+db-update: db-up tools-restore
+    {{ dotnet_with_db }} tool run dotnet-ef database update --project {{ web_project }} --startup-project {{ web_project }}
+
+# Add an EF Core migration: `just db-migrate AddThing`.
+[group('database')]
+db-migrate name: db-up tools-restore
+    {{ dotnet_with_db }} tool run dotnet-ef migrations add {{ name }} --project {{ web_project }} --startup-project {{ web_project }} --output-dir Data/Migrations
+
+# Generate an idempotent SQL migration script.
+[group('database')]
+db-script: db-up tools-restore
+    {{ dotnet_with_db }} tool run dotnet-ef migrations script --idempotent --project {{ web_project }} --startup-project {{ web_project }}
+
+# ---------------------------------------------------------------------------
+# housekeeping
+# ---------------------------------------------------------------------------
+
+# Remove build/test artifacts. `just clean all` also runs `git clean -fdX`.
+[group('housekeeping')]
+clean scope="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    find ./src ./tests ./tools -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
+    rm -rf TestResults coverage playwright-report artifacts
+    if [ '{{ scope }}' = all ]; then
+        git clean -fdX -e .env -e .docker-cache/ -e .vscode/ -e .idea/ -e .cursor/ -e .zed/ -e .claude/
+    fi
+
+# Check NuGet package freshness in the SDK container.
+[group('housekeeping')]
+outdated: tools-restore
+    {{ dotnet }} tool run dotnet-outdated
+
+# ---------------------------------------------------------------------------
+# private plumbing (runnable, hidden from `just --list`)
+# ---------------------------------------------------------------------------
+
+[private]
+cache-dirs:
+    mkdir -p .docker-cache/dotnet-home .docker-cache/e2e-home .docker-cache/nuget .docker-cache/pnpm-home .docker-cache/pnpm-store
+
+[private]
+restore: toolchain-check
+    {{ dotnet }} restore {{ solution }}
+
+[private]
+fmt-check: restore
+    {{ dotnet }} format {{ solution }} --verify-no-changes
+
+[private]
+tools-restore: cache-dirs
+    {{ dotnet }} tool restore
+
+[private]
+infra-init:
+    {{ tofu }} -chdir=infra/opentofu init -backend=false

@@ -11,8 +11,8 @@ injected into the container as a secret.
 ## Commands
 
 ```bash
-just infra-fmt        # check formatting
-just infra-validate   # tofu init -backend=false + validate, no Azure credentials needed
+just infra   # check formatting + tofu init -backend=false + validate (no Azure credentials needed)
+just fmt     # auto-format C# and OpenTofu
 ```
 
 `tofu plan` and `tofu apply` need Azure authentication and a container image.

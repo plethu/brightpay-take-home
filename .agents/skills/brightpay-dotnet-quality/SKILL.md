@@ -93,6 +93,6 @@ current package metadata before pinning new versions.
 Run the narrowest relevant check first, then the full gate:
 
 ```bash
-just test-unit
-just check
+just test CheckoutTotals   # narrowest: filter unit + component tests to what changed
+just check                 # build, tests, format, infra (no E2E)
 ```

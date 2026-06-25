@@ -1,5 +1,20 @@
 # BrightPay Take-Home Agent Instructions
 
+## Task sign-off gate (every task)
+
+Before reporting any task as done, run `just check-all` and state the result in
+the handoff. It chains the fast gate (`just check`: build, unit + component
+tests, format, infra validation) and the containerized `just e2e` (Playwright
+browser flows + Lighthouse against the production `app` image).
+
+`just check` alone is NOT sufficient for sign-off. E2E is deliberately kept out
+of `just check` so the inner-loop gate stays fast; `just e2e` exercises the
+published container and the live Blazor circuit, where defects invisible to
+`just check` and to a markup-only code reading appear (e.g. a publish that drops
+`_framework/blazor.web.js`, leaving the circuit dead and only the no-JS path
+working). If E2E genuinely cannot run, say so explicitly rather than implying
+the suite passed.
+
 - Target .NET 10 and keep the app reviewable with `just check`.
 - Read `docs/SPEC.md` before changing product behavior or scope.
 - Read `.agents/skills/brightpay-takehome-workflow/SKILL.md` before planning
