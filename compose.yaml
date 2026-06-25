@@ -119,6 +119,7 @@ services:
       DOTNET_CLI_HOME: /tmp/e2e-home
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
       NUGET_PACKAGES: /tmp/nuget/packages
       E2E_BASE_URL: http://checkout-web:8080
       LHCI_BASE_URL: http://checkout-web:8080
