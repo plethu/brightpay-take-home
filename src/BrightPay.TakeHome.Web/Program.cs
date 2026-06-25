@@ -50,7 +50,10 @@ string checkoutConnection = builder.Configuration.GetConnectionString("CheckoutD
     ?? throw new InvalidOperationException(
         "Connection string 'CheckoutDatabase' is required. Set ConnectionStrings__CheckoutDatabase.");
 
-builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
+builder.Services.AddDbContext<CheckoutDbContext>(options =>
+    options.UseSqlServer(
+        checkoutConnection,
+        sqlOptions => sqlOptions.EnableRetryOnFailure()));
 builder.Services.AddScoped<ICheckoutCatalogService, CheckoutCatalogService>();
 
 WebApplication app = builder.Build();
