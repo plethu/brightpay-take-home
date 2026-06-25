@@ -19,3 +19,19 @@
   normally use Codeberg/Forgejo.
 - Keep host developer commands native on Windows, macOS, and Linux. Do not add
   Bash-only host scripts; Linux-only scripts are acceptable inside containers.
+
+## Definition of done for Blazor changes
+
+After any Razor/CSS/JS change, verify and report against this checklist in the
+handoff (the matching build-time checks are in `BlazorConventionTests` and the
+E2E suite; see the skill's "Anti-patterns — do not reintroduce" section):
+
+- [ ] No interactive component reads `HttpContext` as component state (prerender
+      state flows via `PersistentComponentState`).
+- [ ] No `.razor.js` mutates or observes Blazor-rendered DOM, and every selector
+      it references exists in markup.
+- [ ] Every input-bearing `EditForm` has a `DataAnnotationsValidator` and a
+      `ValidationSummary`/`ValidationMessage`.
+- [ ] No package was added without a wired call site (ReferenceTrimmer passes).
+- [ ] `@rendermode` is scoped to the smallest subtree that needs it.
+- [ ] Interactive state survives a page reload.

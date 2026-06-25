@@ -61,6 +61,20 @@ that ease migration, testability, and reviewer understanding. Use:
 Use the built-in `TimeProvider` for the clock seam; no package is needed. Verify
 current package metadata before pinning new versions.
 
+### Dependency gate
+
+- A `PackageReference` (or `ProjectReference`) with no compile-time usage outside
+  test infrastructure is a review failure. A new dependency MUST land with a
+  wired call site in the same change; do not add a package "to use later".
+- This is enforced at build time by ReferenceTrimmer (wired in
+  `Directory.Build.props`); with `TreatWarningsAsErrors` an unused reference
+  fails `just build`. Treat a green build as necessary, not sufficient — still
+  confirm the call site reads as intended.
+- Do not duplicate a magic number across the C#/CSS boundary. Define one token
+  (a named constant or CSS custom property) and, where the same value must be
+  mirrored on the other side, document the mirror with a comment pointing back to
+  the source of truth.
+
 ## Review Checklist
 
 - Are domain, UI, persistence, and infrastructure concerns separated?

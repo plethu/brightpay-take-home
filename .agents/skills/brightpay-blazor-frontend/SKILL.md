@@ -33,6 +33,43 @@ description: Build or review browser UI in this BrightPay Blazor take-home repos
 - Make all user-facing text localizable. Do not hard-code copy inside reusable
   components when the text belongs to the product workflow.
 
+## Anti-patterns — do not reintroduce
+
+Each agent that re-derives the interaction architecture tends to invent the same
+hacks. State the idiom imperatively; the named check fails the build when a
+deviation ships, regardless of which model ran or whether it read this file. The
+checks live in `BlazorConventionTests` (component test project) and the E2E
+suite.
+
+- Interactive components MUST NOT load state from `HttpContext` /
+  `IHttpContextAccessor` as component state. Read prerender state once and flow
+  it across the circuit boundary with `PersistentComponentState`
+  (`RegisterOnPersisting` + `TryTakeFromJson`). A raw read with no persistence
+  bridge is the hack.
+  Check: `InteractiveComponentsBridgeHttpContextThroughPersistentState`.
+- In interactive render modes Blazor owns the DOM. Collocated `.razor.js` modules
+  MUST NOT use `MutationObserver`, `innerHTML`/`outerHTML`, `requestSubmit`, or
+  broad `document.querySelector` against Blazor-rendered markup. Drive
+  enter/leave/pulse from component state and CSS (`@key` remount, delayed
+  removal). Check: `RazorJsModulesDoNotMutateOrObserveTheDom`.
+- A `.razor.js` module MUST NOT reference selectors no markup renders. Every
+  `data-*`/class selector it pins behavior to must exist in a `.razor`. Dead
+  selector paths are deleted, not left dangling.
+  Check: `RazorJsSelectorsExistInMarkup`.
+- A control is interactive (`@onclick` + `@onclick:preventDefault`) OR a
+  progressive-enhancement form POST — never both wired to a parallel JS submit.
+- Every `.razor.js` module MUST open with a comment naming the browser
+  capability that requires JS (one unachievable with state + CSS). An empty list
+  means delete the module. Use `<ImportMap>` only for bare-specifier loading.
+- An `EditForm` with user-editable inputs MUST contain a
+  `DataAnnotationsValidator` and surface messages through `ValidationSummary` or
+  `ValidationMessage`. Hidden-only POST wrappers (e.g. clear/charge) are exempt.
+  Check: `InputBearingFormsDeclareValidation`.
+- Interactive state MUST survive a full page reload (session-keyed server state +
+  prerender rehydration). Check: E2E `CheckoutBasketSurvivesPageReload`.
+- `@rendermode` defaults to none. Add interactivity to the smallest subtree that
+  needs it; a page-level render mode needs a one-line justification.
+
 ## Accessibility
 
 - Aim UI work at WCAG 2.2. Automated checks are required, but manual review is

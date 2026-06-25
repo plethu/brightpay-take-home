@@ -85,6 +85,27 @@ public sealed class HomePageSmokeTests : PageTest
         }
     }
 
+    // Regression guard for the "interactive state not persisted" class: a basket built through the
+    // interactive circuit must survive a full page reload, because the session cookie keys
+    // server-side state and prerender rehydrates from it. Mutating-then-reloading is the standing
+    // check, not a one-off.
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task CheckoutBasketSurvivesPageReload()
+    {
+        string baseUrl = RequireBaseUrl();
+
+        await Page.GotoAsync(baseUrl);
+        await AddSkuAsync(Page, "A", 3);
+        await Expect(Page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.30");
+        await Expect(Page.Locator(".sale-line[data-sku='A']")).ToHaveCountAsync(1);
+
+        await Page.ReloadAsync();
+
+        await Expect(Page.Locator(".sale-line[data-sku='A']")).ToHaveCountAsync(1);
+        await Expect(Page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.30");
+    }
+
     [Fact]
     [Trait("Category", "E2E")]
     public async Task CheckoutHasNoBlockingAccessibilityViolations()
