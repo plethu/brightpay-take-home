@@ -9,25 +9,18 @@ namespace BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 
 public sealed class QuantityForFixedPriceEvaluator : OfferEvaluator<QuantityForFixedPriceConfiguration>
 {
-    private readonly Dictionary<Sku, ProductPrice> _prices;
-
     public override OfferType Type => OfferType.QuantityForFixedPrice;
-
-    public QuantityForFixedPriceEvaluator(IEnumerable<ProductPrice> prices)
-    {
-        ArgumentNullException.ThrowIfNull(prices);
-
-        _prices = prices.ToDictionary(price => price.Sku);
-    }
 
     public override AppliedOffer? Evaluate(
         BasketSnapshot basket,
-        OfferDefinition<QuantityForFixedPriceConfiguration> offer)
+        OfferDefinition<QuantityForFixedPriceConfiguration> offer,
+        IReadOnlyDictionary<Sku, ProductPrice> prices)
     {
         ArgumentNullException.ThrowIfNull(basket);
         ArgumentNullException.ThrowIfNull(offer);
+        ArgumentNullException.ThrowIfNull(prices);
 
-        if (!offer.IsActive || !_prices.TryGetValue(offer.Sku, out ProductPrice? price))
+        if (!offer.IsActive || !prices.TryGetValue(offer.Sku, out ProductPrice? price))
         {
             return null;
         }

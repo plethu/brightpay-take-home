@@ -45,6 +45,8 @@ public readonly partial struct Sku
 
     private static string NormalizeInput(string value) => value.Trim().ToUpper(CultureInfo.InvariantCulture);
 
+    // The kata models SKUs as single letters A–Z; this constraint is mirrored by the DB column
+    // length. Widen both together if real multi-character SKUs are ever needed.
     private static Validation Validate(string value) =>
         value.Length == 1 && value[0] is >= 'A' and <= 'Z'
             ? Validation.Ok

@@ -4,7 +4,8 @@
 
 .sale-line-leaving {
     pointer-events: none;
-    animation: line-leave 200ms var(--easing-standard) forwards;
+    /* Duration mirrors CheckoutPage.LineLeaveDelay; source of truth is --motion-base. */
+    animation: line-leave var(--motion-base) var(--easing-standard) forwards;
 }
 
 @keyframes line-enter {

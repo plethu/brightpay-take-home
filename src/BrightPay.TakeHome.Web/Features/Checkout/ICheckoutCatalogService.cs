@@ -20,5 +20,6 @@ public interface ICheckoutCatalogService
 
     CheckoutOperationResult Clear(BasketSnapshot basket);
 
-    CheckoutOperationResult Charge(BasketSnapshot basket);
+    // Async because it prices the basket to record the sale total before clearing.
+    Task<CheckoutOperationResult> ChargeAsync(BasketSnapshot basket, CancellationToken cancellationToken = default);
 }

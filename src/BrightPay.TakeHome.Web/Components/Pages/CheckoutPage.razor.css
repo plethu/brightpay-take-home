@@ -423,7 +423,8 @@
 
 ::deep .banner-error-exit {
     overflow: hidden;
-    animation: checkout-error-out 180ms var(--easing-standard) forwards;
+    /* Duration mirrors CheckoutNotificationController.ErrorExitDelay; source of truth is --motion-error-exit. */
+    animation: checkout-error-out var(--motion-error-exit) var(--easing-standard) forwards;
 }
 
 @media (width <= 52rem) {

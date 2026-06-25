@@ -1,4 +1,6 @@
 using System.Globalization;
+using BrightPay.TakeHome.Core.Checkout.Offers.Evaluation;
+using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 using BrightPay.TakeHome.Web.Components;
 using BrightPay.TakeHome.Web.Data.Checkout;
 using BrightPay.TakeHome.Web.Features.Checkout;
@@ -31,19 +33,25 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 // App.razor resolves the theme cookie to server-render data-theme without flicker.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ICheckoutBasketStore, MemoryCacheCheckoutBasketStore>();
 builder.Services.AddScoped<CheckoutViewProjector>();
+
+// Composition root for the offer engine: register each evaluator once and the projector resolves
+// them from DI. A new offer type ships by adding its evaluator here (plus its config + label),
+// without editing Core. Evaluators are stateless; prices are supplied per evaluation.
+builder.Services.AddSingleton<IOfferEvaluator, QuantityForFixedPriceEvaluator>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-string? checkoutConnection = builder.Configuration.GetConnectionString("CheckoutDatabase");
-if (!string.IsNullOrWhiteSpace(checkoutConnection))
-{
-    builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
-    // Keep offer evaluator registrations manual until the list grows; evaluate Scrutor for autodiscovery later.
-    builder.Services.AddScoped<ICheckoutCatalogService, CheckoutCatalogService>();
-}
+// The checkout catalog lives in SQL Server, so the connection string is required to run.
+string checkoutConnection = builder.Configuration.GetConnectionString("CheckoutDatabase")
+    ?? throw new InvalidOperationException(
+        "Connection string 'CheckoutDatabase' is required. Set ConnectionStrings__CheckoutDatabase.");
+
+builder.Services.AddDbContext<CheckoutDbContext>(options => options.UseSqlServer(checkoutConnection));
+builder.Services.AddScoped<ICheckoutCatalogService, CheckoutCatalogService>();
 
 WebApplication app = builder.Build();
 
@@ -95,18 +103,15 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.MapCheckoutEndpoints();
 
-if (!string.IsNullOrWhiteSpace(checkoutConnection))
+AsyncServiceScope scope = app.Services.CreateAsyncScope();
+try
 {
-    AsyncServiceScope scope = app.Services.CreateAsyncScope();
-    try
-    {
-        CheckoutDbContext dbContext = scope.ServiceProvider.GetRequiredService<CheckoutDbContext>();
-        await dbContext.Database.MigrateAsync().ConfigureAwait(false);
-    }
-    finally
-    {
-        await scope.DisposeAsync().ConfigureAwait(false);
-    }
+    CheckoutDbContext dbContext = scope.ServiceProvider.GetRequiredService<CheckoutDbContext>();
+    await dbContext.Database.MigrateAsync().ConfigureAwait(false);
+}
+finally
+{
+    await scope.DisposeAsync().ConfigureAwait(false);
 }
 
 await app.RunAsync().ConfigureAwait(false);

@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
+using BrightPay.TakeHome.Core.Checkout.Offers.Evaluation;
 using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 using BrightPay.TakeHome.Core.Checkout.Operations;
 using BrightPay.TakeHome.Core.Checkout.Projection;
@@ -151,9 +152,9 @@ public sealed class CheckoutTransactionTests
             .Which.Should().BeEquivalentTo(new
             {
                 Quantity = 3,
-                Subtotal = CheckoutMoney.Pounds(150m),
-                Savings = CheckoutMoney.Pounds(20m),
-                Total = CheckoutMoney.Pounds(130m),
+                Subtotal = CheckoutMoney.FromPence(150m),
+                Savings = CheckoutMoney.FromPence(20m),
+                Total = CheckoutMoney.FromPence(130m),
             }, options => options.ExcludingMissingMembers());
         pricedBasket.Lines.Single().AppliedOffer!.Code.Should().Be("A-3-FOR-130");
     }
@@ -162,15 +163,16 @@ public sealed class CheckoutTransactionTests
     public void ProjectRejectsActiveOfferWithoutRegisteredEvaluator()
     {
         CheckoutTransaction transaction = new(
-            [new ProductPrice(Sku.From("A"), CheckoutMoney.Pounds(50m))],
+            [new ProductPrice(Sku.From("A"), CheckoutMoney.FromPence(50m))],
             [
                 new OfferDefinition(
                     "A-UNSUPPORTED",
                     Sku.From("A"),
                     OfferType.None,
                     OfferState.Active,
-                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.Pounds(130m))),
+                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m))),
             ],
+            Evaluators,
             new BasketSnapshot([new BasketLine(Sku.From("A"), 3)]));
 
         Action act = () => transaction.Project();
@@ -184,10 +186,10 @@ public sealed class CheckoutTransactionTests
     private static CheckoutTransaction StartTransaction(BasketSnapshot basket) =>
         new(
             [
-                new ProductPrice(Sku.From("A"), CheckoutMoney.Pounds(50m)),
-                new ProductPrice(Sku.From("B"), CheckoutMoney.Pounds(30m)),
-                new ProductPrice(Sku.From("C"), CheckoutMoney.Pounds(20m)),
-                new ProductPrice(Sku.From("D"), CheckoutMoney.Pounds(15m)),
+                new ProductPrice(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+                new ProductPrice(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+                new ProductPrice(Sku.From("C"), CheckoutMoney.FromPence(20m)),
+                new ProductPrice(Sku.From("D"), CheckoutMoney.FromPence(15m)),
             ],
             [
                 new OfferDefinition(
@@ -195,13 +197,16 @@ public sealed class CheckoutTransactionTests
                     Sku.From("A"),
                     OfferType.QuantityForFixedPrice,
                     OfferState.Active,
-                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.Pounds(130m))),
+                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m))),
                 new OfferDefinition(
                     "B-2-FOR-45",
                     Sku.From("B"),
                     OfferType.QuantityForFixedPrice,
                     OfferState.Active,
-                    new QuantityForFixedPriceConfiguration(2, CheckoutMoney.Pounds(45m))),
+                    new QuantityForFixedPriceConfiguration(2, CheckoutMoney.FromPence(45m))),
             ],
+            Evaluators,
             basket);
+
+    private static readonly IReadOnlyList<IOfferEvaluator> Evaluators = [new QuantityForFixedPriceEvaluator()];
 }

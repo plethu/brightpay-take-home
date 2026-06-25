@@ -14,6 +14,7 @@
 @inject CheckoutViewProjector Projector
 @inject IHttpContextAccessor HttpContextAccessor
 @inject PersistentComponentState ApplicationState
+@inject TimeProvider TimeProvider
 @inject IStringLocalizer<SharedResource> Localizer
 @implements IDisposable
 
@@ -70,6 +71,8 @@
     private readonly Dictionary<string, CheckoutReceiptLineView> _leavingLines =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // Mirrors the receipt line-leave animation. Source of truth is app.css --motion-base (200ms),
+    // used by ReceiptLine.razor.css; keep in sync so a removed line is dropped as it finishes leaving.
     private static readonly TimeSpan LineLeaveDelay = TimeSpan.FromMilliseconds(200);
 
     private CheckoutMutationErrorCode? ErrorCode =>
@@ -84,7 +87,8 @@
             () => InvokeAsync(StateHasChanged),
             Localizer,
             sku => _model?.Catalog.FirstOrDefault(item =>
-                string.Equals(item.Sku, sku, StringComparison.OrdinalIgnoreCase))?.Name);
+                string.Equals(item.Sku, sku, StringComparison.OrdinalIgnoreCase))?.Name,
+            TimeProvider);
 
         _persistingSubscription = ApplicationState.RegisterOnPersisting(PersistSessionIdAsync);
     }
@@ -152,9 +156,10 @@
         ApplyResult(CatalogService.Clear(_basket), feedback: CheckoutFeedbackCode.Cleared);
     }
 
-    private void Charge()
+    private async Task Charge()
     {
-        ApplyResult(CatalogService.Charge(_basket), feedback: CheckoutFeedbackCode.Charged);
+        CheckoutOperationResult result = await CatalogService.ChargeAsync(_basket).ConfigureAwait(true);
+        ApplyResult(result, feedback: CheckoutFeedbackCode.Charged);
     }
 
     private void ApplyResult(

@@ -2,7 +2,6 @@ using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
 using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
 using BrightPay.TakeHome.Core.Checkout.Offers.Evaluation;
-using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using NodaMoney;
 
@@ -14,22 +13,16 @@ public sealed class PricedBasketProjector
     private readonly IReadOnlyList<OfferDefinition> _offers;
     private readonly OfferEvaluatorRegistry _offerEvaluators;
 
-    public PricedBasketProjector(IEnumerable<ProductPrice> prices, IEnumerable<OfferDefinition> offers)
-        : this(prices, offers, CreateDefaultEvaluators)
-    {
-    }
-
     public PricedBasketProjector(
         IEnumerable<ProductPrice> prices,
         IEnumerable<OfferDefinition> offers,
-        Func<IReadOnlyCollection<ProductPrice>, IEnumerable<IOfferEvaluator>> evaluatorFactory)
+        IEnumerable<IOfferEvaluator> evaluators)
     {
         ArgumentNullException.ThrowIfNull(prices);
         ArgumentNullException.ThrowIfNull(offers);
-        ArgumentNullException.ThrowIfNull(evaluatorFactory);
+        ArgumentNullException.ThrowIfNull(evaluators);
 
-        ProductPrice[] productPrices = [.. prices];
-        _prices = productPrices.ToDictionary(price => price.Sku);
+        _prices = prices.ToDictionary(price => price.Sku);
         _offers =
         [
             .. offers
@@ -37,7 +30,7 @@ public sealed class PricedBasketProjector
                 .OrderBy(offer => offer.Sku.Value, StringComparer.Ordinal)
                 .ThenBy(offer => offer.Code, StringComparer.Ordinal),
         ];
-        _offerEvaluators = new OfferEvaluatorRegistry(evaluatorFactory(productPrices));
+        _offerEvaluators = new OfferEvaluatorRegistry(evaluators);
     }
 
     public PricedBasket Project(BasketSnapshot basket)
@@ -51,7 +44,13 @@ public sealed class PricedBasketProjector
 
         foreach (BasketLine line in basket.Lines)
         {
-            ProductPrice price = _prices[line.Sku];
+            // A basket can outlive a catalog change and reference a SKU that is no longer priced.
+            // Skip it rather than throwing KeyNotFoundException from the indexer.
+            if (!_prices.TryGetValue(line.Sku, out ProductPrice? price))
+            {
+                continue;
+            }
+
             Money lineSubtotal = price.UnitPrice * line.Quantity;
             AppliedOfferSummary? appliedOffer = EvaluateBestOffer(basket, line.Sku);
             Money lineSavings = appliedOffer?.Savings ?? CheckoutMoney.Zero;
@@ -74,7 +73,7 @@ public sealed class PricedBasketProjector
         {
             IOfferEvaluator evaluator = _offerEvaluators.Resolve(offer)
                 ?? throw new InvalidOperationException($"No evaluator is registered for active offer '{offer.Code}' ({offer.Type}).");
-            AppliedOffer? appliedOffer = evaluator.Evaluate(basket, offer);
+            AppliedOffer? appliedOffer = evaluator.Evaluate(basket, offer, _prices);
             if (appliedOffer is not null && (bestOffer is null || appliedOffer.Saving > bestOffer.Saving))
             {
                 bestOffer = appliedOffer;
@@ -85,7 +84,4 @@ public sealed class PricedBasketProjector
             ? null
             : new AppliedOfferSummary(bestOffer.Code, bestOffer.Sku, bestOffer.Applications, bestOffer.Saving);
     }
-
-    private static IEnumerable<IOfferEvaluator> CreateDefaultEvaluators(IReadOnlyCollection<ProductPrice> prices) =>
-        [new QuantityForFixedPriceEvaluator(prices)];
 }

@@ -78,15 +78,16 @@ public static class CheckoutEndpoints
         return RedirectFromMutation(sessionId, basketStore, result, feedback: CheckoutFeedbackCode.Cleared);
     }
 
-    private static IResult Charge(
+    private static async Task<IResult> Charge(
         HttpContext httpContext,
         [FromForm] CheckoutEmptyCommand command,
         ICheckoutCatalogService catalog,
-        ICheckoutBasketStore basketStore)
+        ICheckoutBasketStore basketStore,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(command);
         string sessionId = GetSessionId(httpContext);
-        CheckoutOperationResult result = catalog.Charge(basketStore.Read(sessionId));
+        CheckoutOperationResult result = await catalog.ChargeAsync(basketStore.Read(sessionId), cancellationToken).ConfigureAwait(false);
         return RedirectFromMutation(sessionId, basketStore, result, feedback: CheckoutFeedbackCode.Charged);
     }
 

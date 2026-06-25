@@ -28,7 +28,7 @@ public sealed class CheckoutCatalogMappingTests
             .Which.Should().BeEquivalentTo(new
             {
                 Quantity = 3,
-                FixedPrice = CheckoutMoney.Pounds(130m),
+                FixedPrice = CheckoutMoney.FromPence(130m),
             });
     }
 
@@ -36,15 +36,16 @@ public sealed class CheckoutCatalogMappingTests
     public void TransactionStartedFromCatalogWithActiveOfferUsesOfferTotal()
     {
         CheckoutCatalogSnapshot catalog = new(
-            [new ProductPrice(Sku.From("A"), CheckoutMoney.Pounds(50m))],
+            [new ProductPrice(Sku.From("A"), CheckoutMoney.FromPence(50m))],
             [
                 new OfferDefinition(
                     "A-3-FOR-130",
                     Sku.From("A"),
                     OfferType.QuantityForFixedPrice,
                     OfferState.Active,
-                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.Pounds(130m))),
-            ]);
+                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m))),
+            ],
+            [new QuantityForFixedPriceEvaluator()]);
 
         BasketSnapshot basket = catalog.StartTransaction(BasketSnapshot.Empty).Scan("A").Basket;
         basket = catalog.StartTransaction(basket).Scan("A").Basket;

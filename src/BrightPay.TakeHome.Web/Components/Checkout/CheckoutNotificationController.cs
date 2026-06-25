@@ -6,12 +6,17 @@ internal sealed class CheckoutNotificationController : IDisposable
 {
     private static readonly TimeSpan ToastDebounceDelay = TimeSpan.FromMilliseconds(120);
     private static readonly TimeSpan ToastDismissDelay = TimeSpan.FromMilliseconds(1800);
+
+    // These two mirror CSS exit-animation durations so the element is removed exactly as it finishes
+    // animating. Source of truth is app.css: ToastExitDelay → --motion-toast-exit (160ms),
+    // ErrorExitDelay → --motion-error-exit (180ms). Keep them in sync.
     public static readonly TimeSpan ToastExitDelay = TimeSpan.FromMilliseconds(160);
     public static readonly TimeSpan ErrorExitDelay = TimeSpan.FromMilliseconds(180);
 
     private readonly Func<Task> _onStateChanged;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly Func<string, string?> _findItemName;
+    private readonly TimeProvider _timeProvider;
     private readonly Dictionary<string, ToastBatchLine> _batch =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -29,11 +34,13 @@ internal sealed class CheckoutNotificationController : IDisposable
     public CheckoutNotificationController(
         Func<Task> onStateChanged,
         IStringLocalizer<SharedResource> localizer,
-        Func<string, string?> findItemName)
+        Func<string, string?> findItemName,
+        TimeProvider timeProvider)
     {
         _onStateChanged = onStateChanged;
         _localizer = localizer;
         _findItemName = findItemName;
+        _timeProvider = timeProvider;
     }
 
     public void ShowSuccessToast(string message)
@@ -64,7 +71,7 @@ internal sealed class CheckoutNotificationController : IDisposable
             ? (existing with { Quantity = existing.Quantity + quantity })
             : new ToastBatchLine(name, quantity);
 
-        TimeSpan elapsed = DateTimeOffset.UtcNow - _lastToastAt;
+        TimeSpan elapsed = _timeProvider.GetUtcNow() - _lastToastAt;
         bool visible = Toast is not null && !ToastLeaving;
         TimeSpan delay = visible
             ? elapsed >= ToastDebounceDelay ? TimeSpan.Zero : ToastDebounceDelay - elapsed
@@ -108,7 +115,7 @@ internal sealed class CheckoutNotificationController : IDisposable
 
         try
         {
-            await Task.Delay(ErrorExitDelay, clear.Token).ConfigureAwait(true);
+            await Task.Delay(ErrorExitDelay, _timeProvider, clear.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
@@ -167,7 +174,7 @@ internal sealed class CheckoutNotificationController : IDisposable
         {
             if (delay > TimeSpan.Zero)
             {
-                await Task.Delay(delay, debounce.Token).ConfigureAwait(true);
+                await Task.Delay(delay, _timeProvider, debounce.Token).ConfigureAwait(true);
             }
         }
         catch (OperationCanceledException)
@@ -189,7 +196,7 @@ internal sealed class CheckoutNotificationController : IDisposable
         _dismiss?.Dispose();
         Toast = BuildBatchMessage();
         ToastLeaving = false;
-        _lastToastAt = DateTimeOffset.UtcNow;
+        _lastToastAt = _timeProvider.GetUtcNow();
         _batch.Clear();
 
         CancellationTokenSource dismiss = new();
@@ -215,7 +222,7 @@ internal sealed class CheckoutNotificationController : IDisposable
     {
         try
         {
-            await Task.Delay(ToastDismissDelay, dismiss.Token).ConfigureAwait(true);
+            await Task.Delay(ToastDismissDelay, _timeProvider, dismiss.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {
@@ -237,7 +244,7 @@ internal sealed class CheckoutNotificationController : IDisposable
 
         try
         {
-            await Task.Delay(ToastExitDelay, dismiss.Token).ConfigureAwait(true);
+            await Task.Delay(ToastExitDelay, _timeProvider, dismiss.Token).ConfigureAwait(true);
         }
         catch (OperationCanceledException)
         {

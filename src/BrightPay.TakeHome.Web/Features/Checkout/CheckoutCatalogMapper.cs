@@ -34,11 +34,18 @@ internal static partial class CheckoutCatalogMapper
 
     private static Sku MapSku(string value) => Sku.From(value);
 
-    private static OfferType MapOfferType(int value) => (OfferType)value;
+    private static OfferType MapOfferType(int value) =>
+        Enum.IsDefined((OfferType)value)
+            ? (OfferType)value
+            : throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown offer type in persisted catalog.");
 
-    private static OfferState MapOfferState(int value) => (OfferState)value;
+    private static OfferState MapOfferState(int value) =>
+        Enum.IsDefined((OfferState)value)
+            ? (OfferState)value
+            : throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown offer state in persisted catalog.");
 
-    private static Money MapMoney(decimal amount) => CheckoutMoney.Pounds(amount);
+    // Persisted amounts are GBP minor units (pence); see CheckoutMoney.
+    private static Money MapMoney(decimal pence) => CheckoutMoney.FromPence(pence);
 
     private static QuantityForFixedPriceConfiguration MapConfiguration(CheckoutOfferEntity offer) =>
         new(offer.Quantity, MapMoney(offer.FixedPriceAmount));

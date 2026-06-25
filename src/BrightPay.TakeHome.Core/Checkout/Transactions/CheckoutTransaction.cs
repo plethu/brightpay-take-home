@@ -1,6 +1,7 @@
 using NodaMoney;
 using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
+using BrightPay.TakeHome.Core.Checkout.Offers.Evaluation;
 using BrightPay.TakeHome.Core.Checkout.Projection;
 using BrightPay.TakeHome.Core.Checkout.Operations;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
@@ -8,19 +9,29 @@ using BrightPay.TakeHome.Core.Checkout.Identifiers;
 
 namespace BrightPay.TakeHome.Core.Checkout.Transactions;
 
+/// <summary>
+/// An in-flight checkout: applies basket operations (scan, increment, remove, clear) against a
+/// fixed catalog snapshot and returns the resulting basket and offer-aware total. This is a
+/// pricing/operation context, not a persisted financial transaction or a database transaction.
+/// </summary>
 public sealed class CheckoutTransaction
 {
     private readonly Dictionary<Sku, ProductPrice> _prices;
     private readonly PricedBasketProjector _projector;
 
-    public CheckoutTransaction(IEnumerable<ProductPrice> prices, IEnumerable<OfferDefinition> offers, BasketSnapshot basket)
+    public CheckoutTransaction(
+        IEnumerable<ProductPrice> prices,
+        IEnumerable<OfferDefinition> offers,
+        IEnumerable<IOfferEvaluator> evaluators,
+        BasketSnapshot basket)
     {
         ArgumentNullException.ThrowIfNull(prices);
         ArgumentNullException.ThrowIfNull(offers);
+        ArgumentNullException.ThrowIfNull(evaluators);
         ArgumentNullException.ThrowIfNull(basket);
 
         _prices = prices.ToDictionary(price => price.Sku);
-        _projector = new PricedBasketProjector(_prices.Values, offers);
+        _projector = new PricedBasketProjector(_prices.Values, offers, evaluators);
         Basket = basket;
     }
 

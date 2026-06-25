@@ -3,6 +3,7 @@ using AwesomeAssertions;
 using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
 using BrightPay.TakeHome.Core.Checkout.Offers.Definitions;
+using BrightPay.TakeHome.Core.Checkout.Offers.Evaluation;
 using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 using BrightPay.TakeHome.Core.Checkout.Operations;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
@@ -30,6 +31,7 @@ public sealed class CartPageTests : BunitContext
     public CartPageTests()
     {
         Services.AddLocalization(options => options.ResourcesPath = "Resources");
+        Services.AddSingleton(TimeProvider.System);
         Services.AddSingleton<IHttpContextAccessor>(_ => new HttpContextAccessor
         {
             HttpContext = _httpContext,
@@ -144,10 +146,10 @@ public sealed class CartPageTests : BunitContext
     {
         private static readonly ProductPrice[] Prices =
         [
-            new(Sku.From("A"), CheckoutMoney.Pounds(50m)),
-            new(Sku.From("B"), CheckoutMoney.Pounds(30m)),
-            new(Sku.From("C"), CheckoutMoney.Pounds(20m)),
-            new(Sku.From("D"), CheckoutMoney.Pounds(15m)),
+            new(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            new(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+            new(Sku.From("C"), CheckoutMoney.FromPence(20m)),
+            new(Sku.From("D"), CheckoutMoney.FromPence(15m)),
         ];
 
         private static readonly OfferDefinition[] Offers =
@@ -157,17 +159,17 @@ public sealed class CartPageTests : BunitContext
                 Sku.From("A"),
                 OfferType.QuantityForFixedPrice,
                 OfferState.Active,
-                new QuantityForFixedPriceConfiguration(3, CheckoutMoney.Pounds(130m))),
+                new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m))),
             new(
                 "B-2-FOR-45",
                 Sku.From("B"),
                 OfferType.QuantityForFixedPrice,
                 OfferState.Active,
-                new QuantityForFixedPriceConfiguration(2, CheckoutMoney.Pounds(45m))),
+                new QuantityForFixedPriceConfiguration(2, CheckoutMoney.FromPence(45m))),
         ];
 
         public Task<CheckoutCatalogSnapshot> LoadActiveCatalogAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers));
+            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers, Evaluators));
 
         public Task<IReadOnlyList<CheckoutCatalogItem>> LoadCatalogItemsAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<CheckoutCatalogItem>>(
@@ -179,21 +181,23 @@ public sealed class CartPageTests : BunitContext
                 ]);
 
         public Task<CheckoutOperationResult> AddAsync(BasketSnapshot basket, string? skuText, int quantity, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers).StartTransaction(basket).Add(skuText, quantity));
+            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers, Evaluators).StartTransaction(basket).Add(skuText, quantity));
 
         public Task<CheckoutOperationResult> IncrementAsync(BasketSnapshot basket, Sku sku, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers).StartTransaction(basket).Increment(sku));
+            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers, Evaluators).StartTransaction(basket).Increment(sku));
 
         public Task<CheckoutOperationResult> DecrementAsync(BasketSnapshot basket, Sku sku, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers).StartTransaction(basket).Decrement(sku));
+            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers, Evaluators).StartTransaction(basket).Decrement(sku));
 
         public Task<CheckoutOperationResult> RemoveLineAsync(BasketSnapshot basket, Sku sku, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers).StartTransaction(basket).RemoveLine(sku));
+            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers, Evaluators).StartTransaction(basket).RemoveLine(sku));
 
         public CheckoutOperationResult Clear(BasketSnapshot basket) =>
-            new CheckoutCatalogSnapshot(Prices, Offers).StartTransaction(basket).Clear();
+            new CheckoutCatalogSnapshot(Prices, Offers, Evaluators).StartTransaction(basket).Clear();
 
-        public CheckoutOperationResult Charge(BasketSnapshot basket) =>
-            new CheckoutCatalogSnapshot(Prices, Offers).StartTransaction(basket).Charge();
+        public Task<CheckoutOperationResult> ChargeAsync(BasketSnapshot basket, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new CheckoutCatalogSnapshot(Prices, Offers, Evaluators).StartTransaction(basket).Charge());
+
+        private static readonly IReadOnlyList<IOfferEvaluator> Evaluators = [new QuantityForFixedPriceEvaluator()];
     }
 }

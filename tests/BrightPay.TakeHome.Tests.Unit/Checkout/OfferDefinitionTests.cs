@@ -18,7 +18,7 @@ public sealed class OfferDefinitionTests
             Sku.From("A"),
             OfferType.QuantityForFixedPrice,
             OfferState.Active,
-            new QuantityForFixedPriceConfiguration(3, CheckoutMoney.Pounds(130m)));
+            new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m)));
 
         offer.IsActive.Should().BeTrue();
         offer.Configuration.Should().BeOfType<QuantityForFixedPriceConfiguration>()
@@ -30,7 +30,7 @@ public sealed class OfferDefinitionTests
     [InlineData(1)]
     public void QuantityForFixedPriceRejectsNonOfferQuantities(int quantity)
     {
-        Action action = () => GC.KeepAlive(new QuantityForFixedPriceConfiguration(quantity, CheckoutMoney.Pounds(130m)));
+        Action action = () => GC.KeepAlive(new QuantityForFixedPriceConfiguration(quantity, CheckoutMoney.FromPence(130m)));
 
         action.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -94,7 +94,10 @@ public sealed class OfferDefinitionTests
     {
         IOfferEvaluator evaluator = new TestEvaluator();
 
-        Action action = () => evaluator.Evaluate(BasketSnapshot.Empty, CreateMismatchedConfigurationOffer());
+        Action action = () => evaluator.Evaluate(
+            BasketSnapshot.Empty,
+            CreateMismatchedConfigurationOffer(),
+            new Dictionary<Sku, ProductPrice>());
 
         action.Should().Throw<ArgumentException>()
             .WithMessage("*QuantityForFixedPriceConfiguration*");
@@ -106,7 +109,7 @@ public sealed class OfferDefinitionTests
             Sku.From("A"),
             OfferType.QuantityForFixedPrice,
             OfferState.Active,
-            new QuantityForFixedPriceConfiguration(3, CheckoutMoney.Pounds(130m)));
+            new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m)));
 
     private static OfferDefinition CreateMismatchedConfigurationOffer() =>
         new(
@@ -122,7 +125,8 @@ public sealed class OfferDefinitionTests
 
         public override AppliedOffer? Evaluate(
             BasketSnapshot basket,
-            OfferDefinition<QuantityForFixedPriceConfiguration> offer) =>
+            OfferDefinition<QuantityForFixedPriceConfiguration> offer,
+            IReadOnlyDictionary<Sku, ProductPrice> prices) =>
             null;
     }
 
@@ -132,7 +136,10 @@ public sealed class OfferDefinitionTests
 
         public Type ConfigurationType => typeof(QuantityForFixedPriceConfiguration);
 
-        public AppliedOffer? Evaluate(BasketSnapshot basket, OfferDefinition offer) => null;
+        public AppliedOffer? Evaluate(
+            BasketSnapshot basket,
+            OfferDefinition offer,
+            IReadOnlyDictionary<Sku, ProductPrice> prices) => null;
     }
 
     private sealed record OtherConfiguration : OfferConfiguration;
