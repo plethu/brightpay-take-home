@@ -69,7 +69,7 @@ services:
     environment:
       E2E_BASE_URL: http://checkout-web:8080
       LHCI_BASE_URL: http://checkout-web:8080
-      CHROME_PATH: /ms-playwright/chromium-1223/chrome-linux64/chrome
+      # CHROME_PATH is resolved from the Playwright image inside run-compose-e2e.sh.
       PNPM_HOME: /pnpm
     volumes:
       - .:/src

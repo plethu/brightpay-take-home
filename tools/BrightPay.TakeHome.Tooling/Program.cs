@@ -15,31 +15,64 @@ return command switch
 static int CheckToolchain()
 {
     string root = FindRepositoryRoot();
-    ToolchainVersionPin[] dotnetSdkPins =
-    [
-        new(".mise.toml", ReadMiseDotnetVersion(Path.Combine(root, ".mise.toml"))),
-        new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
-        new("compose.yaml SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, "compose.yaml"))),
-        new("Dockerfile SDK image", ReadDotnetSdkImageVersion(Path.Combine(root, "Dockerfile"))),
-    ];
+    IReadOnlyDictionary<string, string> miseTools = ReadMiseTools(Path.Combine(root, ".mise.toml"));
 
-    string expectedDotnetSdkVersion = dotnetSdkPins[0].Version;
-
-    if (dotnetSdkPins.Any(pin => !StringComparer.Ordinal.Equals(pin.Version, expectedDotnetSdkVersion)))
+    string MisePin(string tool)
     {
-        Console.Error.WriteLine(".NET SDK version mismatch:");
-        foreach (ToolchainVersionPin pin in dotnetSdkPins)
-        {
-            Console.Error.WriteLine($"  {pin.Source}: {pin.Version}");
-        }
-
-        return 1;
+        return miseTools.TryGetValue(tool, out string? version)
+            ? version
+            : throw new InvalidOperationException($"Could not find a '{tool}' pin in .mise.toml [tools].");
     }
 
-    Console.WriteLine(
-        $".NET SDK pin OK: {expectedDotnetSdkVersion} ({string.Join(", ", dotnetSdkPins.Select(pin => pin.Source))})"
-    );
-    return 0;
+    // Every place a version is independently declared. First pin in each group is the source of
+    // truth; the rest must match. Extend this list to guard a new pin against drift.
+    VersionGroup[] groups =
+    [
+        new(".NET SDK",
+        [
+            new(".mise.toml", MisePin("dotnet")),
+            new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
+            new("compose.yaml SDK image", ReadVersion(Path.Combine(root, "compose.yaml"), ToolingRegexes.DotnetSdkImageVersionRegex, ".NET SDK image tag")),
+            new("Dockerfile SDK image", ReadVersion(Path.Combine(root, "Dockerfile"), ToolingRegexes.DotnetSdkImageVersionRegex, ".NET SDK image tag")),
+        ]),
+        new("pnpm",
+        [
+            new(".mise.toml", MisePin("pnpm")),
+            new("package.json packageManager", ReadVersion(Path.Combine(root, "package.json"), ToolingRegexes.PnpmPackageManagerRegex, "pnpm packageManager pin")),
+        ]),
+        new("OpenTofu",
+        [
+            new(".mise.toml", MisePin("opentofu")),
+            new(".github/workflows/ci.yml", ReadVersion(Path.Combine(root, ".github", "workflows", "ci.yml"), ToolingRegexes.TofuWorkflowVersionRegex, "tofu_version")),
+            new(".github/workflows/release.yml", ReadVersion(Path.Combine(root, ".github", "workflows", "release.yml"), ToolingRegexes.TofuWorkflowVersionRegex, "tofu_version")),
+        ]),
+        new("Playwright",
+        [
+            new("Directory.Packages.props", ReadVersion(Path.Combine(root, "Directory.Packages.props"), ToolingRegexes.PlaywrightPackageVersionRegex, "Microsoft.Playwright package version")),
+            new("compose.yaml e2e image", ReadVersion(Path.Combine(root, "compose.yaml"), ToolingRegexes.PlaywrightImageVersionRegex, "Playwright image tag")),
+        ]),
+    ];
+
+    bool allMatch = true;
+    foreach (VersionGroup group in groups)
+    {
+        string expected = group.Pins[0].Version;
+        if (group.Pins.Any(pin => !StringComparer.Ordinal.Equals(pin.Version, expected)))
+        {
+            allMatch = false;
+            Console.Error.WriteLine($"{group.Name} version mismatch (expected {expected} from {group.Pins[0].Source}):");
+            foreach (ToolchainVersionPin pin in group.Pins)
+            {
+                Console.Error.WriteLine($"  {pin.Source}: {pin.Version}");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"{group.Name} pin OK: {expected} ({string.Join(", ", group.Pins.Select(pin => pin.Source))})");
+        }
+    }
+
+    return allMatch ? 0 : 1;
 }
 
 static int DevDashboard()
@@ -169,14 +202,34 @@ static string FindRepositoryRoot()
     throw new InvalidOperationException("Could not find repository root containing .mise.toml and global.json.");
 }
 
-static string ReadMiseDotnetVersion(string path)
+// Parse the [tools] table of .mise.toml (the source of truth for host tool versions) into a map.
+static IReadOnlyDictionary<string, string> ReadMiseTools(string path)
 {
-    string text = File.ReadAllText(path);
-    Match match = ToolingRegexes.MiseDotnetPinRegex.Match(text);
+    Dictionary<string, string> tools = new(StringComparer.Ordinal);
+    bool inToolsTable = false;
 
-    return match.Success
-        ? match.Groups["version"].Value
-        : throw new InvalidOperationException($"Could not find a dotnet tool pin in {path}.");
+    foreach (string rawLine in File.ReadLines(path))
+    {
+        string line = rawLine.Trim();
+        if (line.StartsWith('['))
+        {
+            inToolsTable = string.Equals(line, "[tools]", StringComparison.Ordinal);
+            continue;
+        }
+
+        if (!inToolsTable || line.Length == 0 || line.StartsWith('#'))
+        {
+            continue;
+        }
+
+        Match match = ToolingRegexes.TomlKeyValueRegex.Match(line);
+        if (match.Success)
+        {
+            tools[match.Groups["key"].Value] = match.Groups["version"].Value;
+        }
+    }
+
+    return tools;
 }
 
 static string ReadGlobalJsonDotnetVersion(string path)
@@ -190,12 +243,11 @@ static string ReadGlobalJsonDotnetVersion(string path)
         : throw new InvalidOperationException($"Could not find sdk.version in {path}.");
 }
 
-static string ReadDotnetSdkImageVersion(string path)
+static string ReadVersion(string path, Regex regex, string description)
 {
-    string text = File.ReadAllText(path);
-    Match match = ToolingRegexes.DotnetSdkImageVersionRegex.Match(text);
+    Match match = regex.Match(File.ReadAllText(path));
 
     return match.Success
         ? match.Groups["version"].Value
-        : throw new InvalidOperationException($"Could not find a pinned .NET SDK image in {path}.");
+        : throw new InvalidOperationException($"Could not find {description} in {path}.");
 }

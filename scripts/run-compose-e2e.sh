@@ -32,7 +32,10 @@ for _ in {1..60}; do
         echo "E2E smoke tests completed: $passed_count passed"
 
         echo "Running Lighthouse CI against $url"
-        corepack prepare pnpm@10.34.3 --activate
+        # The pnpm version comes from package.json's packageManager field (corepack reads it), so it
+        # is not re-pinned here. CHROME_PATH is resolved from the Playwright image at runtime so it
+        # survives image bumps instead of hard-coding the chromium build directory.
+        export CHROME_PATH="$(ls -d /ms-playwright/chromium-*/chrome-linux64/chrome | head -n1)"
         corepack pnpm install --frozen-lockfile
         LHCI_BASE_URL="$url" corepack pnpm exec lhci autorun --config=./lighthouserc.cjs
         exit 0
