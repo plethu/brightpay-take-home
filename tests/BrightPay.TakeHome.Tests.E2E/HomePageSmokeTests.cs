@@ -27,6 +27,7 @@ public sealed class HomePageSmokeTests : PageTest
             .ToBeAttachedAsync();
 
         await AssertScanButtonAlignsWithInputAsync(Page, Text("CheckoutScanLabel"), Text("CheckoutAddButton"));
+        await Expect(Page.Locator("[data-checkout-page][data-interactive]")).ToBeAttachedAsync();
         await AddSkuAsync(Page, "A", 3);
         await Expect(Page.Locator(".toast")).ToContainTextAsync(Text("CheckoutToast_AddedQuantity", 3, Text("SkuName_A")));
         await Expect(Page.Locator("[data-action='checkout']")).ToContainTextAsync("£1.30");

@@ -1,4 +1,4 @@
-.dotnet/
+**/.dotnet/
 .env
 .git/
 .github/
@@ -6,7 +6,7 @@
 .vscode/
 .cursor/
 .zed/
-.nuget/
+**/.nuget/
 .mise.toml
 artifacts/
 **/bin/

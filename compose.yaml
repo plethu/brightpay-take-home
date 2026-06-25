@@ -1,5 +1,16 @@
 name: brightpay-takehome
 
+x-dotnet-env: &dotnet-env
+  DOTNET_CLI_HOME: /tmp/dotnet-home
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  NUGET_PACKAGES: /tmp/nuget/packages
+
+x-workspace-volumes: &workspace-volumes
+  - .:/workspace
+  - ./.docker-cache/dotnet-home:/tmp/dotnet-home
+  - ./.docker-cache/nuget:/tmp/nuget/packages
+
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-CU20-ubuntu-22.04
@@ -12,9 +23,28 @@ services:
     volumes:
       - sql-data:/var/opt/mssql
 
+  sdk:
+    image: mcr.microsoft.com/dotnet/sdk:10.0.203
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /workspace
+    environment:
+      <<: *dotnet-env
+      HOME: /tmp/dotnet-home
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__CheckoutDatabase: Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=${SQL_SERVER_PASSWORD:-BrightPay_takehome_Passw0rd!};TrustServerCertificate=True
+      DisableHttpsRedirection: "true"
+      APP_PUBLIC_BASE_URL: http://localhost:${APP_HOST_PORT:-8080}
+      APP_INTERNAL_BASE_URL: http://web:8080
+      SQL_HOST_PORT: ${SQL_HOST_PORT:-14333}
+      APP_HOST_PORT: ${APP_HOST_PORT:-8080}
+    volumes: *workspace-volumes
+    profiles:
+      - tools
+
   web:
     image: mcr.microsoft.com/dotnet/sdk:10.0.203
     container_name: ${DEV_CONTAINER_NAME:-brightpay-takehome-web}
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     depends_on:
       - db
     working_dir: /workspace
@@ -28,19 +58,15 @@ services:
       - --urls
       - http://0.0.0.0:8080
     environment:
+      <<: *dotnet-env
+      HOME: /tmp/dotnet-home
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ConnectionStrings__CheckoutDatabase: Server=brightpay-takehome-db,1433;Database=BrightPayTakeHome;User Id=sa;Password=${SQL_SERVER_PASSWORD:-BrightPay_takehome_Passw0rd!};TrustServerCertificate=True
       DisableHttpsRedirection: "true"
-      DOTNET_CLI_HOME: /tmp/dotnet-home
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-      DOTNET_NOLOGO: "1"
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
     ports:
       - "${APP_HOST_PORT:-8080}:8080"
-    volumes:
-      - .:/workspace
-      - nuget-cache:/workspace/.nuget/packages
-      - dotnet-home:/tmp/dotnet-home
+    volumes: *workspace-volumes
 
   app:
     build:
@@ -59,7 +85,10 @@ services:
           - checkout-web
 
   e2e:
-    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     depends_on:
       - db
       - app
@@ -67,24 +96,27 @@ services:
     command:
       - ./scripts/run-compose-e2e.sh
     environment:
+      # Non-interactive run: let pnpm purge a stale (bind-mounted) node_modules
+      # without a TTY confirmation prompt instead of aborting the Lighthouse step.
+      CI: "true"
+      HOME: /tmp/e2e-home
+      DOTNET_CLI_HOME: /tmp/e2e-home
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+      NUGET_PACKAGES: /tmp/nuget/packages
       E2E_BASE_URL: http://checkout-web:8080
       LHCI_BASE_URL: http://checkout-web:8080
-      # CHROME_PATH is resolved from the Playwright image inside run-compose-e2e.sh.
-      PNPM_HOME: /pnpm
+      PNPM_HOME: /tmp/pnpm-home
+      PNPM_STORE_DIR: /tmp/pnpm-store
+      COREPACK_HOME: /tmp/e2e-home/corepack
+      DOTNET_ROOT: /opt/dotnet
     volumes:
       - .:/src
-      - nuget-cache:/src/.nuget/packages
-      - e2e-dotnet:/opt/dotnet
-      - pnpm-store:/pnpm/store
+      - ./.docker-cache/e2e-home:/tmp/e2e-home
+      - ./.docker-cache/nuget:/tmp/nuget/packages
+      - ./.docker-cache/pnpm-home:/tmp/pnpm-home
+      - ./.docker-cache/pnpm-store:/tmp/pnpm-store
 
 volumes:
   sql-data:
     name: brightpay-takehome-sql
-  nuget-cache:
-    name: brightpay-takehome-nuget
-  dotnet-home:
-    name: brightpay-takehome-dotnet-home
-  e2e-dotnet:
-    name: brightpay-takehome-e2e-dotnet
-  pnpm-store:
-    name: brightpay-takehome-pnpm-store

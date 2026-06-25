@@ -1,3 +1,8 @@
+#pragma warning disable MA0009 // Regular expressions should not be vulnerable to Denial of Service attacks.
+#pragma warning disable MA0051 // Method is too long.
+#pragma warning disable MA0110 // Use the Regex source generator.
+#pragma warning disable SYSLIB1045 // Use GeneratedRegexAttribute to generate regex implementation.
+
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -15,43 +20,7 @@ return command switch
 static int CheckToolchain()
 {
     string root = FindRepositoryRoot();
-    IReadOnlyDictionary<string, string> miseTools = ReadMiseTools(Path.Combine(root, ".mise.toml"));
-
-    string MisePin(string tool)
-    {
-        return miseTools.TryGetValue(tool, out string? version)
-            ? version
-            : throw new InvalidOperationException($"Could not find a '{tool}' pin in .mise.toml [tools].");
-    }
-
-    // Every place a version is independently declared. First pin in each group is the source of
-    // truth; the rest must match. Extend this list to guard a new pin against drift.
-    VersionGroup[] groups =
-    [
-        new(".NET SDK",
-        [
-            new(".mise.toml", MisePin("dotnet")),
-            new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
-            new("compose.yaml SDK image", ReadVersion(Path.Combine(root, "compose.yaml"), ToolingRegexes.DotnetSdkImageVersionRegex, ".NET SDK image tag")),
-            new("Dockerfile SDK image", ReadVersion(Path.Combine(root, "Dockerfile"), ToolingRegexes.DotnetSdkImageVersionRegex, ".NET SDK image tag")),
-        ]),
-        new("pnpm",
-        [
-            new(".mise.toml", MisePin("pnpm")),
-            new("package.json packageManager", ReadVersion(Path.Combine(root, "package.json"), ToolingRegexes.PnpmPackageManagerRegex, "pnpm packageManager pin")),
-        ]),
-        new("OpenTofu",
-        [
-            new(".mise.toml", MisePin("opentofu")),
-            new(".github/workflows/ci.yml", ReadVersion(Path.Combine(root, ".github", "workflows", "ci.yml"), ToolingRegexes.TofuWorkflowVersionRegex, "tofu_version")),
-            new(".github/workflows/release.yml", ReadVersion(Path.Combine(root, ".github", "workflows", "release.yml"), ToolingRegexes.TofuWorkflowVersionRegex, "tofu_version")),
-        ]),
-        new("Playwright",
-        [
-            new("Directory.Packages.props", ReadVersion(Path.Combine(root, "Directory.Packages.props"), ToolingRegexes.PlaywrightPackageVersionRegex, "Microsoft.Playwright package version")),
-            new("compose.yaml e2e image", ReadVersion(Path.Combine(root, "compose.yaml"), ToolingRegexes.PlaywrightImageVersionRegex, "Playwright image tag")),
-        ]),
-    ];
+    VersionGroup[] groups = BuildVersionGroups(root);
 
     bool allMatch = true;
     foreach (VersionGroup group in groups)
@@ -75,14 +44,58 @@ static int CheckToolchain()
     return allMatch ? 0 : 1;
 }
 
+static VersionGroup[] BuildVersionGroups(string root)
+{
+    IReadOnlyDictionary<string, string> miseTools = ReadMiseTools(Path.Combine(root, ".mise.toml"));
+
+    string MisePin(string tool)
+    {
+        return miseTools.TryGetValue(tool, out string? version)
+            ? version
+            : throw new InvalidOperationException($"Could not find a '{tool}' pin in .mise.toml [tools].");
+    }
+
+    // Every place a version is independently declared. First pin in each group is the source of
+    // truth; the rest must match. Extend this list to guard a new pin against drift.
+    return
+    [
+        new(".NET SDK",
+        [
+            new(".mise.toml", MisePin("dotnet")),
+            new("global.json", ReadGlobalJsonDotnetVersion(Path.Combine(root, "global.json"))),
+            new("compose.yaml SDK image", ReadVersion(Path.Combine(root, "compose.yaml"), ToolingRegexes.DotnetSdkImageVersionRegex, ".NET SDK image tag")),
+            new("Dockerfile SDK image", ReadVersion(Path.Combine(root, "Dockerfile"), ToolingRegexes.DotnetSdkImageVersionRegex, ".NET SDK image tag")),
+        ]),
+        new("pnpm",
+        [
+            new(".mise.toml", MisePin("pnpm")),
+            new("package.json packageManager", ReadVersion(Path.Combine(root, "package.json"), ToolingRegexes.PnpmPackageManagerRegex, "pnpm packageManager pin")),
+        ]),
+        new("OpenTofu",
+        [
+            new(".mise.toml", MisePin("opentofu")),
+            new(".github/workflows/ci.yml", ReadVersion(Path.Combine(root, ".github", "workflows", "ci.yml"), ToolingRegexes.TofuWorkflowVersionRegex, "tofu_version")),
+            new(".github/workflows/release.yml", ReadVersion(Path.Combine(root, ".github", "workflows", "release.yml"), ToolingRegexes.TofuWorkflowVersionRegex, "tofu_version")),
+        ]),
+        new("Playwright",
+        [
+            new("Directory.Packages.props", ReadVersion(Path.Combine(root, "Directory.Packages.props"), ToolingRegexes.PlaywrightPackageVersionRegex, "Microsoft.Playwright package version")),
+            new("Dockerfile.e2e", ReadVersion(Path.Combine(root, "Dockerfile.e2e"), ToolingRegexes.PlaywrightImageVersionRegex, "Playwright image tag")),
+        ]),
+    ];
+}
+
 static int DevDashboard()
 {
     string appPort = Environment.GetEnvironmentVariable("APP_HOST_PORT") ?? "8080";
     string sqlPort = Environment.GetEnvironmentVariable("SQL_HOST_PORT") ?? "14333";
     string webContainer = Environment.GetEnvironmentVariable("DEV_CONTAINER_NAME") ?? "brightpay-takehome-web";
     string dbContainer = Environment.GetEnvironmentVariable("DB_CONTAINER_NAME") ?? "brightpay-takehome-db";
-    string baseUrl = $"http://localhost:{appPort}";
-    string cartUrl = $"{baseUrl}/cart";
+    string displayBaseUrl = Environment.GetEnvironmentVariable("APP_PUBLIC_BASE_URL") ?? $"http://localhost:{appPort}";
+    string healthBaseUrl = Environment.GetEnvironmentVariable("APP_INTERNAL_BASE_URL") ?? displayBaseUrl;
+    string cartUrl = $"{healthBaseUrl}/cart";
+
+    Console.WriteLine($"Waiting for {cartUrl}...");
 
     if (!WaitForApp(cartUrl).GetAwaiter().GetResult())
     {
@@ -94,7 +107,7 @@ static int DevDashboard()
     ClearConsole();
     WriteBrightLogo();
 
-    Console.WriteLine($"Open: {baseUrl}/");
+    Console.WriteLine($"Open: {displayBaseUrl}/");
     Console.WriteLine();
     Console.WriteLine("Services");
     Console.WriteLine($"  Web:        {webContainer}");

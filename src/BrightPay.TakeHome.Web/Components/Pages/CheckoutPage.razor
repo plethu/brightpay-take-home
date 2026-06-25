@@ -24,7 +24,7 @@
                    Generation="@_notifications.ToastGeneration" Entrance="@_notifications.ToastEntrance"
                    OnDismiss="@DismissToastAsync" />
 
-    <section class="checkout-page" data-checkout-page aria-label="@Localizer["AppName"]">
+    <section class="checkout-page" data-checkout-page data-interactive="@(_interactive ? "true" : null)" aria-label="@Localizer["AppName"]">
         <div class="till-e">
             <AddPad Catalog="@_model.Catalog"
                     ErrorMessage="@_notifications.ErrorMessage"
@@ -83,11 +83,24 @@
     // used by ReceiptLine.razor.css; keep in sync so a removed line is dropped as it finishes leaving.
     private static readonly TimeSpan LineLeaveDelay = TimeSpan.FromMilliseconds(200);
 
+    private bool _interactive;
+
     private CheckoutMutationErrorCode? ErrorCode =>
         Enum.TryParse(Error, ignoreCase: false, out CheckoutMutationErrorCode code) ? code : null;
 
     private CheckoutFeedbackCode? FeedbackCode =>
         Enum.TryParse(Feedback, ignoreCase: false, out CheckoutFeedbackCode code) ? code : null;
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _interactive = true;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
 
     protected override void OnInitialized()
     {
