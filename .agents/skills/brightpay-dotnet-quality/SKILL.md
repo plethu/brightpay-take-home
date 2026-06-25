@@ -70,10 +70,6 @@ current package metadata before pinning new versions.
   `Directory.Build.props`); with `TreatWarningsAsErrors` an unused reference
   fails `just build`. Treat a green build as necessary, not sufficient — still
   confirm the call site reads as intended.
-- Do not duplicate a magic number across the C#/CSS boundary. Define one token
-  (a named constant or CSS custom property) and, where the same value must be
-  mirrored on the other side, document the mirror with a comment pointing back to
-  the source of truth.
 
 ## Review Checklist
 

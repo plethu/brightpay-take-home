@@ -9,14 +9,13 @@ description: Build or review browser UI in this BrightPay Blazor take-home repos
 
 - Build the checkout workflow from `docs/SPEC.md` as the first screen. Do not
   add a marketing landing page.
-- Use a server-rendered Blazor Web App with targeted Interactive Server
-  components for checkout scanning feedback. Do not switch to WebAssembly or
-  client-only rendering.
+- `AGENTS.md` owns the standing render-mode and progressive-enhancement
+  invariant (server-rendered Blazor Web App, targeted Interactive Server, no-JS
+  paths work by default). This skill covers how to apply it, not whether to.
+- Use targeted Interactive Server components for checkout scanning feedback. Do
+  not switch to WebAssembly or client-only rendering.
 - Apply `@rendermode` per component and only where client interactivity changes
   the user workflow.
-- Progressive enhancement is required. Default routes, forms, validation, and
-  checkout totals must render and complete without JavaScript; Interactive
-  Server augments the no-JS path.
 - Lazy-load only large feature areas, expensive JS interop, or optional
   component suites. Do not add lazy loading to hide unnecessary bundle weight.
 - Hold navigable view state (filters, paging, sort, selected record) in the
@@ -156,6 +155,10 @@ globally in `app.css`).
 - Define design tokens for color, spacing, radius, typography, motion, shadows,
   and z-index. Arbitrary one-off constants in components are review concerns
   unless the local exception is explained.
+- Do not duplicate a magic number across the C#/CSS boundary. Define one token
+  (a named constant or CSS custom property) and, where the same value must be
+  mirrored on the other side, document the mirror with a comment pointing back
+  to the source of truth.
 - Prefer modern CSS progressively: cascade layers, container queries with
   explicit containment, logical properties, `color-scheme`, and native
   `<dialog>` semantics or mature Blazor primitives.
