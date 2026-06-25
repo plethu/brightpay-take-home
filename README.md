@@ -20,7 +20,7 @@ cd take-home
 mise trust
 mise install
 cp .env.example .env
-just up
+just dev
 ```
 
 Docker is the default local container runtime. To use Podman instead, set
