@@ -2,7 +2,7 @@
 
 .NET 10 Blazor checkout app for the BrightPay take-home exercise.
 
-`scratch/` is a series of stream-of-consciousness brainstorming files that I usually wouldn't document or stage, but thought might be useful to help explain thought processes behind choices.
+`scratch/` is a series of stream-of-consciousness brainstorming files that I usually wouldn't document or stage, but thought they might help show the reasoning behind some choices.
 
 ## Prerequisites
 

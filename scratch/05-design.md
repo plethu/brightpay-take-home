@@ -1,4 +1,4 @@
-# 24/6/26 -- ui design / field research
+# 24/6/26 ui design / field research
 
 First pass for D4 was getting Opus to draw three different checkout mockups
 using the real `wwwroot/app.css` tokens:
@@ -61,7 +61,7 @@ barcodes. Anything that costs an extra glance per scan is expensive.
 
 ## References
 
-### Square -- Register
+### Square Register
 
 ![Square retail POS: product grid, ticket, promo price and customer-facing total](refs/square-retail.jpg)
 
@@ -69,7 +69,7 @@ Keep: touch-first add, struck original price, named promo, and a customer-facing
 total. Drop: photographed catalogue and total-on-payment-button, since checkout
 is mocked here.
 
-### Shopify -- POS
+### Shopify POS
 
 ![Shopify POS: product grid on the left, cart on the right, and a charge button with total](refs/shopify.png)
 
@@ -77,7 +77,7 @@ Same broad pattern as Square, but the charge area is clearer: basket count on th
 left of the button, total on the main action. That is probably the version to copy
 for revision E. The catalogue/product photos still do too much for four SKUs.
 
-### Square -- Restaurant
+### Square Restaurant
 
 ![Square restaurant POS: menu grid, ticket with modifiers, discounts, taxes and charge button](refs/square-restaurant.jpg)
 
@@ -85,14 +85,14 @@ Useful because the ticket shows line detail without losing the charge action.
 Modifiers are out of scope, but discounts/taxes sitting above `Charge $21.12`
 reinforce the same thing: explain the price, then pin the total to the action.
 
-### Odoo -- POS
+### Odoo POS
 
 ![Odoo grocery POS: ticket, total, numeric keypad and produce grid](refs/odoo.png)
 
 Keep: keypad attached to the ticket. That gives a path for "add three of A" as
 one action. Drop: weight pricing and manual price entry.
 
-### NCR -- supermarket lane terminal
+### NCR supermarket lane terminal
 
 ![NCR supermarket touchscreen with A-Z produce lookup and physical keypad](refs/rocketpos.jpg)
 
@@ -100,14 +100,14 @@ Best interaction reference. Touch picks the item, hardware keys handle numbers,
 and the A-Z index avoids scrolling through a giant catalogue. The screen is
 dense and dated, but the model is right for this: touch-first with keyed fallback.
 
-### Wix -- POS checkout
+### Wix POS checkout
 
 ![Wix POS: product rows with cart, subtotal, tax and total](refs/wix.png)
 
 This is basically D's reference-row-as-add-control in the wild. For this kata I'd
 strip the row to SKU, price, offer and add button.
 
-### WooCommerce / Webkul -- POS
+### WooCommerce / Webkul POS
 
 ![WooCommerce POS: product grid on the left, cart on the right, subtotal and Pay button](refs/woo-commerce.webp)
 
@@ -116,7 +116,7 @@ the screen is busy: side nav, top toolbar, categories, apply/coupon/discount row
 hold cart and pay. For this kata, copy the simple cart/pay separation and avoid
 all the surrounding management UI.
 
-### Shopfields -- phone and tablet
+### Shopfields phone and tablet
 
 ![Shopfields POS shown as one phone column and two tablet columns](refs/shopfields-has-mobile-example.png)
 
@@ -145,7 +145,7 @@ Current read:
   (WCAG 2.5.5 / Apple HIG) drives the SKU keys, both steppers, and the
   Clear/Charge actions, bumped to 48px under `@media (pointer: coarse)` for
   phone/tablet glass. Reducing visual padding must not drop a control below that
-  floor -- pin the height to the token and let padding shrink.
+  floor; pin the height to the token and let padding shrink.
 * Styling target: work-tool, compact receipt, clear total, large add targets,
   visible offers. Less SaaS-card, less hardware costume.
 

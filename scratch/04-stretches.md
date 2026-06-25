@@ -1,4 +1,4 @@
-# 24/06/26 -- stretches outside mvp
+# 24/06/26 stretches outside mvp
 
 Now I've got a better idea of what the spec is, potential stretches:
 

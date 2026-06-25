@@ -1,4 +1,4 @@
-# OpenTofu Azure Deployment
+# OpenTofu Azure deployment
 
 Optional Azure target for the take-home: a published container image on Azure
 Container Apps, backed by Azure SQL. Not required to run or review the app
@@ -43,4 +43,4 @@ Built to cost near nothing while idle:
 
 The SQL firewall uses Azure's "allow Azure services" rule so the container can
 reach the database without fixed egress IPs. That is fine for a demo. Anything
-real wants a VNet with a private endpoint.
+real needs a VNet with a private endpoint.
