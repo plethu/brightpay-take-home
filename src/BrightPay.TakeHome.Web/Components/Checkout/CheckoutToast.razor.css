@@ -19,7 +19,8 @@
 }
 
 .toast-exit {
-    animation: checkout-toast-out 160ms var(--easing-standard) forwards;
+    /* Duration must match CheckoutNotificationController.ToastExitDelay (→ --motion-toast-exit token). */
+    animation: checkout-toast-out var(--motion-toast-exit) var(--easing-standard) forwards;
 }
 
 .toast-icon {

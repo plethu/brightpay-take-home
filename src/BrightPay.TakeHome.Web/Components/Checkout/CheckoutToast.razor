@@ -5,7 +5,7 @@
 
 @if (!string.IsNullOrWhiteSpace(Message))
 {
-    <div class="toast @(IsLeaving ? "toast-exit" : null)" role="status">
+    <div class="toast @(IsLeaving ? "toast-exit" : null)" aria-hidden="true">
         <span class="toast-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" focusable="false">
                 <path d="m5 12 4 4L19 6" />

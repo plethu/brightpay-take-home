@@ -243,10 +243,6 @@
     border-block-end: var(--border-width) solid var(--color-border);
 }
 
-::deep .sale-line[data-animation-ghost="true"] {
-    pointer-events: none;
-}
-
 ::deep .sale-line:last-child {
     border-block-end: 0;
 }
@@ -284,9 +280,6 @@
     font-weight: 700;
 }
 
-::deep .line-qty[data-pulse="true"] {
-    will-change: transform;
-}
 
 ::deep .line-amounts {
     display: flex;

@@ -21,5 +21,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="BrightPay.TakeHome.Tests.Unit" />
+    <InternalsVisibleTo Include="BrightPay.TakeHome.Tests.Components" />
   </ItemGroup>
 </Project>

@@ -3,15 +3,19 @@
 @inject IStringLocalizer<SharedResource> Localizer
 
 <section class="pane add-pane" aria-labelledby="add-hd">
-    <EditForm Model="@_formModel" FormName="checkout-add" class="add-form" method="post" action="@CheckoutRoutes.Add">
+    <EditForm EditContext="@_editContext" FormName="checkout-add" class="add-form" method="post" action="@CheckoutRoutes.Add">
+        <DataAnnotationsValidator />
         <div class="add-head">
             <h2 class="pane-title" id="add-hd">@Localizer["CheckoutAddHeading"]</h2>
             <div class="qty">
                 <label for="qty">@Localizer["CheckoutQuantityLabel"]</label>
                 <div class="qty-control">
-                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]" data-qty-step="-1" disabled>-</button>
-                    <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" @bind="Quantity">
-                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutIncreaseQuantity"]" data-qty-step="1">+</button>
+                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]"
+                            disabled="@(_formModel.Quantity <= 1)"
+                            @onclick="@(() => _formModel.Quantity = Math.Max(1, _formModel.Quantity - 1))">-</button>
+                    <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" @bind="_formModel.Quantity">
+                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutIncreaseQuantity"]"
+                            @onclick="@(() => _formModel.Quantity++)">+</button>
                 </div>
             </div>
         </div>
@@ -20,7 +24,13 @@
             <div class="scan-form">
                 <div class="field">
                     <label for="scan">@Localizer["CheckoutScanLabel"]</label>
-                    <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1" placeholder="@Localizer["CheckoutScanPlaceholder"]" aria-describedby="scan-alert" aria-invalid="@(ErrorIsInvalid ? "true" : "false")" value="@ManualSku" @oninput="@HandleManualSkuInput">
+                    <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1"
+                           placeholder="@Localizer["CheckoutScanPlaceholder"]"
+                           aria-describedby="scan-alert"
+                           aria-invalid="@(ErrorIsInvalid ? "true" : "false")"
+                           value="@_formModel.ManualSku"
+                           @oninput="@HandleManualSkuInput">
+                    <ValidationMessage For="() => _formModel.ManualSku" />
                 </div>
                 <button type="submit" class="btn btn-secondary" @onclick="@AddManualSkuAsync" @onclick:preventDefault="true">@Localizer["CheckoutAddButton"]</button>
             </div>
@@ -45,6 +55,7 @@
 
 @code {
     private readonly CheckoutAddCommand _formModel = new();
+    private EditContext _editContext = null!;
 
     [Parameter]
     public IReadOnlyList<CheckoutCatalogItemView> Catalog { get; set; } = [];
@@ -59,21 +70,19 @@
     public bool ErrorIsLeaving { get; set; }
 
     [Parameter]
-    public EventCallback<CheckoutAddRequest> OnAddSku { get; set; }
-
-    [Parameter]
-    public EventCallback<CheckoutAddRequest> OnAddManualSku { get; set; }
+    public EventCallback<CheckoutAddRequest> OnAdd { get; set; }
 
     [Parameter]
     public EventCallback OnManualSkuChanged { get; set; }
 
-    private int Quantity { get; set; } = 1;
-
-    private string? ManualSku { get; set; }
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_formModel);
+    }
 
     private async Task HandleManualSkuInput(ChangeEventArgs args)
     {
-        ManualSku = args.Value?.ToString();
+        _formModel.ManualSku = args.Value?.ToString();
         if (ErrorIsInvalid)
         {
             await OnManualSkuChanged.InvokeAsync().ConfigureAwait(true);
@@ -82,11 +91,17 @@
 
     private Task AddSkuAsync(string sku)
     {
-        return OnAddSku.InvokeAsync(new CheckoutAddRequest(sku, Quantity));
+        return OnAdd.InvokeAsync(new CheckoutAddRequest(sku, _formModel.Quantity));
     }
 
-    private Task AddManualSkuAsync()
+    private async Task AddManualSkuAsync()
     {
-        return OnAddManualSku.InvokeAsync(new CheckoutAddRequest(ManualSku ?? string.Empty, Quantity));
+        if (!_editContext.Validate())
+        {
+            return;
+        }
+
+        await OnAdd.InvokeAsync(new CheckoutAddRequest(_formModel.ManualSku ?? string.Empty, _formModel.Quantity))
+            .ConfigureAwait(true);
     }
 }

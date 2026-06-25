@@ -1,3 +1,4 @@
+using System.Reflection;
 using AwesomeAssertions;
 using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
@@ -23,22 +24,20 @@ namespace BrightPay.TakeHome.Tests.Components;
 public sealed class CartPageTests : BunitContext
 {
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly FakeCheckoutBasketStore _basketStore = new();
+    private readonly DefaultHttpContext _httpContext = new();
 
     public CartPageTests()
     {
         Services.AddLocalization(options => options.ResourcesPath = "Resources");
-        Services.AddDataProtection();
         Services.AddSingleton<IHttpContextAccessor>(_ => new HttpContextAccessor
         {
-            HttpContext = new DefaultHttpContext(),
+            HttpContext = _httpContext,
         });
-        Services.AddScoped<CheckoutBasketCookieStore>();
+        Services.AddSingleton<ICheckoutBasketStore>(_basketStore);
         Services.AddScoped<CheckoutViewProjector>();
         Services.AddSingleton<ICheckoutCatalogService>(new FakeCheckoutCatalogService());
-        BunitJSModuleInterop module = JSInterop.SetupModule("./Components/Pages/CheckoutPage.razor.js");
-        module.SetupVoid("initialize");
-        module.SetupVoid("dispose");
-        module.SetupVoid("pulseToast");
+        Services.AddSingleton(CreateEmptyPersistentState());
         _localizer = Services.GetRequiredService<IStringLocalizer<SharedResource>>();
     }
 
@@ -63,7 +62,8 @@ public sealed class CartPageTests : BunitContext
             Render<AddPad>(parameters => parameters
             .Add(component => component.Catalog, CatalogViews));
 
-        component.Find("[data-qty-step='-1']").HasAttribute("disabled").Should().BeTrue();
+        component.Find($".qty-step[aria-label='{_localizer["CheckoutDecreaseQuantity"].Value}']")
+            .HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
@@ -93,11 +93,52 @@ public sealed class CartPageTests : BunitContext
         component.Find(".toast").TextContent.Should().Contain(_localizer["CheckoutToast_Added", _localizer["SkuName_A"].Value].Value);
     }
 
+    [Fact]
+    public void CheckoutRendersBasketFromStore()
+    {
+        _httpContext.Items[CheckoutSession.ItemsKey] = "test-session";
+        _basketStore.Write("test-session", new BasketSnapshot([new BasketLine(Sku.From("A"), 2)]));
+
+        IRenderedComponent<CheckoutPage> component = Render<CheckoutPage>();
+
+        component.Markup.Should().Contain(_localizer["SkuName_A"].Value);
+        component.FindAll(".sale-line").Should().HaveCount(1);
+    }
+
+    // PersistentComponentState has an internal constructor; reflection is the only way to create
+    // a no-op instance for bUnit tests. TryTakeFromJson always returns false on a fresh instance,
+    // so the component falls back to HttpContext.Items for the session ID.
+    private static PersistentComponentState CreateEmptyPersistentState()
+    {
+        ConstructorInfo ctor = typeof(PersistentComponentState)
+            .GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance)[0];
+        object[] args = [.. ctor.GetParameters().Select(p => MakeArg(p.ParameterType))];
+        return (PersistentComponentState)ctor.Invoke(args);
+    }
+
+    private static object MakeArg(Type t) =>
+        t.IsInterface || t.IsAbstract
+            ? new Dictionary<string, byte[]>(StringComparer.Ordinal)
+            : Activator.CreateInstance(t)!;
+
     private static readonly CheckoutCatalogItemView[] CatalogViews =
     [
         new("A", "Apple", "£0.50", "3 for £1.30"),
         new("B", "Banana", "£0.30", "2 for £0.45"),
     ];
+
+    private sealed class FakeCheckoutBasketStore : ICheckoutBasketStore
+    {
+        private readonly Dictionary<string, BasketSnapshot> _store = [];
+
+        public BasketSnapshot Read(string sessionId) =>
+            _store.TryGetValue(sessionId, out BasketSnapshot? basket) ? basket : BasketSnapshot.Empty;
+
+        public void Write(string sessionId, BasketSnapshot basket) =>
+            _store[sessionId] = basket;
+
+        public void Clear(string sessionId) => _store.Remove(sessionId);
+    }
 
     private sealed class FakeCheckoutCatalogService : ICheckoutCatalogService
     {

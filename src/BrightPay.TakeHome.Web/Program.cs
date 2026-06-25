@@ -30,8 +30,8 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 // App.razor resolves the theme cookie to server-render data-theme without flicker.
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddDataProtection();
-builder.Services.AddScoped<CheckoutBasketCookieStore>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICheckoutBasketStore, MemoryCacheCheckoutBasketStore>();
 builder.Services.AddScoped<CheckoutViewProjector>();
 
 builder.Services.AddRazorComponents()
@@ -63,6 +63,31 @@ if (!app.Configuration.GetValue<bool>("DisableHttpsRedirection"))
 
 app.UseRequestLocalization();
 app.UseStaticFiles();
+
+// Mint or read the session cookie before Blazor writes any response. The GUID is
+// stored in HttpContext.Items so endpoints and prerender can read it without re-parsing.
+app.Use(async (context, next) =>
+{
+    const string cookieName = "brightpay.session";
+    const string itemsKey = CheckoutSession.ItemsKey;
+
+    if (!context.Request.Cookies.TryGetValue(cookieName, out string? sessionId)
+        || string.IsNullOrWhiteSpace(sessionId))
+    {
+        sessionId = Guid.NewGuid().ToString("N");
+        context.Response.Cookies.Append(cookieName, sessionId, new CookieOptions
+        {
+            HttpOnly = true,
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = context.Request.IsHttps,
+        });
+    }
+
+    context.Items[itemsKey] = sessionId;
+    await next(context).ConfigureAwait(false);
+});
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();

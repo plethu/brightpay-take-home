@@ -31,12 +31,8 @@ toolchain-check:
 restore: toolchain-check
     dotnet restore {{ solution }}
 
-# Compile collocated checkout TypeScript assets.
-frontend-build:
-    pnpm --package=typescript@6.0.3 dlx tsc --project tsconfig.json
-
 # Build the solution in Release mode.
-build: restore frontend-build
+build: restore
     dotnet build {{ solution }} --configuration Release --no-restore
 
 # Run unit tests.

@@ -13,7 +13,7 @@
     <div class="total-actions">
         <EditForm Model="@_clearModel" FormName="checkout-clear" class="action-form action-form-clear" method="post" action="@CheckoutRoutes.Clear" data-clear-form>
             <input type="hidden" name="submitted" value="true">
-            <button type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty" @onclick="@OpenClearDialog" @onclick:preventDefault="true">@Localizer["CheckoutClear"]</button>
+            <button @ref="_clearButtonRef" type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty" @onclick="@OpenClearDialog" @onclick:preventDefault="true">@Localizer["CheckoutClear"]</button>
         </EditForm>
         <EditForm Model="@_chargeModel" FormName="checkout-charge" class="action-form action-form-checkout" method="post" action="@CheckoutRoutes.Charge">
             <input type="hidden" name="submitted" value="true">
@@ -26,13 +26,14 @@
 
     @if (_showClearDialog)
     {
-        <div class="confirm-backdrop" @onclick="@CloseClearDialog">
-            <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="clear-confirm-title" @onclick:stopPropagation="true">
+        <div class="confirm-backdrop" @onclick="@CloseClearDialogAsync">
+            <div class="confirm" role="dialog" aria-modal="true" aria-labelledby="clear-confirm-title"
+                 @onclick:stopPropagation="true" @onkeydown="@HandleDialogKeyDownAsync">
                 <h2 id="clear-confirm-title">@Localizer["CheckoutClearConfirmTitle"]</h2>
                 <p>@Localizer["CheckoutClearConfirm"]</p>
                 <div class="confirm-actions">
-                    <button type="button" class="btn btn-secondary" autofocus @onclick="@CloseClearDialog">@Localizer["CheckoutClearCancel"]</button>
-                    <button type="button" class="btn btn-clear-confirm" @onclick="@ConfirmClear">@Localizer["CheckoutClearConfirmAction"]</button>
+                    <button @ref="_cancelRef" type="button" class="btn btn-secondary" @onclick="@CloseClearDialogAsync">@Localizer["CheckoutClearCancel"]</button>
+                    <button type="button" class="btn btn-clear-confirm" @onclick="@ConfirmClearAsync">@Localizer["CheckoutClearConfirmAction"]</button>
                 </div>
             </div>
         </div>
@@ -43,6 +44,9 @@
     private readonly CheckoutEmptyCommand _clearModel = new();
     private readonly CheckoutEmptyCommand _chargeModel = new();
     private bool _showClearDialog;
+    private bool _shouldFocusCancel;
+    private ElementReference _cancelRef;
+    private ElementReference _clearButtonRef;
 
     [Parameter]
     public required CheckoutTotalsView Totals { get; set; }
@@ -53,19 +57,51 @@
     [Parameter]
     public EventCallback OnCharge { get; set; }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusCancel)
+        {
+            _shouldFocusCancel = false;
+            try
+            {
+                await _cancelRef.FocusAsync().ConfigureAwait(true);
+            }
+            catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException)
+            {
+                // Circuit may not be ready or element removed before focus; safe to ignore.
+            }
+        }
+    }
+
     private void OpenClearDialog()
     {
         _showClearDialog = true;
+        _shouldFocusCancel = true;
     }
 
-    private void CloseClearDialog()
+    private async Task CloseClearDialogAsync()
     {
         _showClearDialog = false;
+        try
+        {
+            await _clearButtonRef.FocusAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException or ObjectDisposedException)
+        {
+        }
     }
 
-    private async Task ConfirmClear()
+    private async Task ConfirmClearAsync()
     {
         _showClearDialog = false;
         await OnClear.InvokeAsync().ConfigureAwait(true);
+    }
+
+    private async Task HandleDialogKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (string.Equals(e.Key, "Escape", StringComparison.Ordinal))
+        {
+            await CloseClearDialogAsync().ConfigureAwait(true);
+        }
     }
 }

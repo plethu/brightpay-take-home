@@ -4,8 +4,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Explicit input validation called from handlers; not the AspNetCore adapter. -->
-    <PackageReference Include="FluentValidation" />
     <!-- Currency-aware money values instead of hand-rolled decimal arithmetic. -->
     <PackageReference Include="NodaMoney" />
     <!-- Source-generated value objects (Sku, etc.) so illegal states stay unrepresentable. -->
