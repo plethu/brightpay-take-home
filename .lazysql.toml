@@ -1,0 +1,4 @@
+[[database]]
+Name = 'BrightPay Dev (Docker)'
+Provider = 'sqlserver'
+URL = 'sqlserver://sa:BrightPay_takehome_Passw0rd%21@127.0.0.1:14333?database=BrightPayTakeHome&TrustServerCertificate=true'

@@ -39,6 +39,11 @@ default:
 # dev — local runtime lifecycle
 # ---------------------------------------------------------------------------
 
+# Open lazysql pointed at the local Docker SQL Server.
+[group('dev')]
+db: db-up
+    lazysql -config .lazysql.toml
+
 # Start the database + web watcher and print the dev dashboard.
 [group('dev')]
 dev: up
