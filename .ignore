@@ -1,3 +1,6 @@
 obj/
 bin/
 .dotnet/
+artifacts/
+node_modules/
+.playwright/
