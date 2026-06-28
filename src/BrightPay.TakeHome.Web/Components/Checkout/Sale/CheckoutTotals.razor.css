@@ -1,0 +1,157 @@
+.total-foot {
+    padding-block: var(--space-lg);
+    padding-inline: var(--space-lg);
+    border-block-start: var(--border-width) solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.totals {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-block-end: var(--space-lg);
+}
+
+.total-actions {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.action-form {
+    display: flex;
+    min-inline-size: 0;
+}
+
+.action-form-clear {
+    flex: 1 1 0;
+}
+
+.action-form-checkout {
+    flex: 3 1 0;
+}
+
+.action-form .btn {
+    inline-size: 100%;
+}
+
+.btn-clear {
+    background: transparent;
+    border-color: var(--color-border);
+    color: var(--color-text-muted);
+}
+
+.btn-clear:hover:not(:disabled) {
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-surface);
+    color: var(--color-danger-text);
+}
+
+.btn-checkout {
+    justify-content: space-between;
+    gap: var(--space-md);
+    background: var(--color-action-primary);
+    border-color: var(--color-action-primary);
+    color: var(--color-action-primary-text);
+}
+
+.btn-checkout:hover:not(:disabled) {
+    background: var(--color-action-primary-hover);
+    border-color: var(--color-action-primary-hover);
+}
+
+/* Plays only when the keyed .checkout-amount node remounts (a total change); see CheckoutTotals.razor.
+   Reduced motion is handled globally in app.css. */
+.checkout-amount {
+    font-size: var(--font-size-xl);
+    font-variant-numeric: tabular-nums;
+    animation: amount-pulse var(--motion-base) var(--easing-standard);
+}
+
+.confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-toast) - 1);
+    display: grid;
+    place-items: center;
+    padding: var(--space-lg);
+    background: oklch(0% 0 0 / 45%);
+    animation: checkout-backdrop-in var(--motion-base) var(--easing-standard);
+}
+
+.confirm {
+    margin: auto;
+    max-inline-size: min(28rem, calc(100vw - 2 * var(--space-lg)));
+    padding: var(--space-xl);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    box-shadow: var(--shadow-sm);
+    animation: checkout-dialog-in var(--motion-base) var(--easing-standard);
+}
+
+.confirm::backdrop {
+    background: oklch(0% 0 0 / 45%);
+}
+
+.confirm h2 {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.confirm p {
+    margin-block-start: var(--space-sm);
+    color: var(--color-text-muted);
+}
+
+.confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-md);
+    margin-block-start: var(--space-xl);
+}
+
+.btn-clear-confirm {
+    background: var(--color-danger-surface);
+    border-color: var(--color-danger-border);
+    color: var(--color-danger-text);
+}
+
+@keyframes amount-pulse {
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale(1.12);
+    }
+}
+
+@keyframes checkout-backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes checkout-dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(var(--space-sm)) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (width <= 36rem) {
+    .total-actions {
+        grid-template-columns: 1fr;
+    }
+}

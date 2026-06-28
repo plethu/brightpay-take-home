@@ -8,7 +8,9 @@ using BrightPay.TakeHome.Core.Checkout.Offers.QuantityForFixedPrice;
 using BrightPay.TakeHome.Core.Checkout.Operations;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Web;
-using BrightPay.TakeHome.Web.Components.Checkout;
+using BrightPay.TakeHome.Web.Components.Checkout.AddItems;
+using BrightPay.TakeHome.Web.Components.Checkout.Sale;
+using BrightPay.TakeHome.Web.Components.Checkout.Shared;
 using BrightPay.TakeHome.Web.Components.Pages;
 using BrightPay.TakeHome.Web.Features.Checkout;
 using BrightPay.TakeHome.Web.Features.Checkout.Projection;
@@ -58,10 +60,10 @@ public sealed class CartPageTests : BunitContext
     }
 
     [Fact]
-    public void AddPadStartsWithDisabledQuantityDecrement()
+    public void AddItemsPaneStartsWithDisabledQuantityDecrement()
     {
-        IRenderedComponent<AddPad> component =
-            Render<AddPad>(parameters => parameters
+        IRenderedComponent<AddItemsPane> component =
+            Render<AddItemsPane>(parameters => parameters
             .Add(component => component.Catalog, CatalogViews));
 
         component.Find($".qty-step[aria-label='{_localizer["CheckoutDecreaseQuantity"].Value}']")

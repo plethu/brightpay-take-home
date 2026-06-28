@@ -43,8 +43,8 @@
 </div>
 
 @code {
-    private readonly CheckoutEmptyCommand _clearModel = new();
-    private readonly CheckoutEmptyCommand _chargeModel = new();
+    private readonly CheckoutPostCommand _clearModel = new();
+    private readonly CheckoutPostCommand _chargeModel = new();
     private bool _showClearDialog;
     private bool _shouldFocusCancel;
     private ElementReference _cancelRef;

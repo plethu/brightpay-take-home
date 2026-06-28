@@ -1,5 +1,5 @@
 @inject IStringLocalizer<SharedResource> Localizer
-@using BrightPay.TakeHome.Web.Features.Checkout.Routing
+@using BrightPay.TakeHome.Web.Features.Checkout.Notifications
 
 <div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">@Message</div>
 
@@ -21,9 +21,9 @@
                 <span aria-hidden="true">x</span>
             </button>
         }
-        else
+        else if (!string.IsNullOrWhiteSpace(DismissHref))
         {
-            <a class="toast-dismiss" href="@CheckoutRoutes.Page" aria-label="@Localizer["CheckoutDismissNotification"]">
+            <a class="toast-dismiss" href="@DismissHref" aria-label="@Localizer["CheckoutDismissNotification"]">
                 <span aria-hidden="true">x</span>
             </a>
         }
@@ -45,6 +45,9 @@
 
     [Parameter]
     public EventCallback OnDismiss { get; set; }
+
+    [Parameter]
+    public string? DismissHref { get; set; }
 
     private string? EntranceClass => Entrance switch
     {

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using BrightPay.TakeHome.Web;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
@@ -48,6 +49,28 @@ public sealed class HomePageSmokeTests : PageTest
         await AddSkuAsync(Page, "B", 2).ConfigureAwait(true);
         await Page.Locator("[data-action='checkout']").ClickAsync().ConfigureAwait(true);
         await Expect(Page.Locator(".toast")).ToContainTextAsync(Text("CheckoutToast_Charged")).ConfigureAwait(true);
+    }
+
+    [Fact]
+    [Trait("Category", "E2E")]
+    public async Task CheckoutMicroAnimationsAreAttachedToInteractiveUpdates()
+    {
+        string baseUrl = RequireBaseUrl();
+
+        await Page.GotoAsync(baseUrl).ConfigureAwait(true);
+
+        await AddSkuAsync(Page, "A", 1).ConfigureAwait(true);
+        await ExpectAnimationAsync(Page.Locator(".toast"), "checkout-toast-in").ConfigureAwait(true);
+        await ExpectAnimationAsync(Page.Locator(".line-qty"), "qty-pulse").ConfigureAwait(true);
+        await ExpectAnimationAsync(Page.Locator(".line-price"), "price-pulse").ConfigureAwait(true);
+        await ExpectAnimationAsync(Page.Locator(".checkout-amount"), "amount-pulse").ConfigureAwait(true);
+
+        await AddSkuAsync(Page, "A", 2).ConfigureAwait(true);
+        await ExpectAnimationAsync(Page.Locator(".sale-line[data-sku='A'] .line-meta"), "offer-in").ConfigureAwait(true);
+
+        await Page.GetByLabel(Text("CheckoutScanLabel")).FillAsync("Z").ConfigureAwait(true);
+        await Page.GetByLabel(Text("CheckoutScanLabel")).PressAsync("Enter").ConfigureAwait(true);
+        await ExpectAnimationAsync(Page.GetByRole(AriaRole.Alert), "checkout-error-in").ConfigureAwait(true);
     }
 
     [Fact]
@@ -172,40 +195,28 @@ public sealed class HomePageSmokeTests : PageTest
         }
     }
 
-    private static async Task AssertScanButtonAlignsWithInputAsync(IPage page, string scanLabel, string addLabel)
+    private Task ExpectAnimationAsync(ILocator locator, string animationNamePrefix)
+    {
+        Regex scopedAnimationName = new(
+            $"^{Regex.Escape(animationNamePrefix)}(?:-[a-z0-9]+)*$",
+            RegexOptions.None,
+            TimeSpan.FromMilliseconds(100));
+        return Expect(locator).ToHaveCSSAsync("animation-name", scopedAnimationName);
+    }
+
+    private async Task AssertScanButtonAlignsWithInputAsync(IPage page, string scanLabel, string addLabel)
     {
         ILocator input = page.GetByLabel(scanLabel);
         ILocator button = page.GetByRole(AriaRole.Button, new() { Name = addLabel, Exact = true });
 
-        LocatorBoundingBoxResult? inputBox = null;
-        LocatorBoundingBoxResult? buttonBox = null;
-        for (int attempt = 0; attempt < 5; attempt++)
-        {
-            try
-            {
-                await input.ScrollIntoViewIfNeededAsync().ConfigureAwait(false);
-                inputBox = await input.BoundingBoxAsync().ConfigureAwait(false);
-                buttonBox = await button.BoundingBoxAsync().ConfigureAwait(false);
-                if (inputBox is not null && buttonBox is not null)
-                {
-                    break;
-                }
-            }
-            catch (PlaywrightException)
-            {
-                await page.WaitForTimeoutAsync(100).ConfigureAwait(false);
-            }
-        }
+        await Expect(input).ToBeVisibleAsync().ConfigureAwait(false);
+        await Expect(button).ToBeVisibleAsync().ConfigureAwait(false);
+        await input.ScrollIntoViewIfNeededAsync().ConfigureAwait(false);
 
-        if (inputBox is null)
-        {
-            throw new InvalidOperationException("The manual SKU input should be visible.");
-        }
-
-        if (buttonBox is null)
-        {
-            throw new InvalidOperationException("The manual SKU add button should be visible.");
-        }
+        LocatorBoundingBoxResult inputBox = await input.BoundingBoxAsync().ConfigureAwait(false)
+            ?? throw new InvalidOperationException("The manual SKU input should have a layout box.");
+        LocatorBoundingBoxResult buttonBox = await button.BoundingBoxAsync().ConfigureAwait(false)
+            ?? throw new InvalidOperationException("The manual SKU add button should have a layout box.");
 
         Assert.InRange(Math.Abs(inputBox.Y - buttonBox.Y), 0, 2);
         Assert.InRange(Math.Abs(inputBox.Y + inputBox.Height - buttonBox.Y - buttonBox.Height), 0, 2);

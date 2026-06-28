@@ -1,17 +1,68 @@
 .sale-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-sm) var(--space-md);
+    padding-block: var(--space-md);
+    border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.sale-line {
     animation: line-enter var(--motion-base) var(--easing-standard);
+}
+
+.sale-line:last-child {
+    border-block-end: 0;
 }
 
 .sale-line-leaving {
     pointer-events: none;
-    /* Duration mirrors CheckoutPage.LineLeaveDelay; source of truth is --motion-base. */
+    /* Duration mirrors CheckoutWorkspace.LineLeaveDelay; source of truth is --motion-base. */
     animation: line-leave var(--motion-base) var(--easing-standard) forwards;
+}
+
+.line-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-inline-size: 0;
+}
+
+.line-name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-weight: 700;
+}
+
+.line-sku {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+.line-amounts {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    justify-self: end;
+    line-height: 1.25;
 }
 
 /* The price is keyed on its value in ReceiptLine.razor, so a charged-amount change remounts this node
    and replays the pulse (no-JS twin of the removed pulse(.line-price)). */
 .line-price {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
     animation: price-pulse var(--motion-base) var(--easing-standard);
+}
+
+.line-was {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-decoration: line-through;
 }
 
 /* Offer badge + struck price are rendered only while the offer applies, so the node is created exactly
@@ -21,7 +72,7 @@
     animation: offer-in var(--motion-base) var(--easing-standard);
 }
 
-/* A ghost of the dropped offer, kept for one removal window (CheckoutPage.LineLeaveDelay → --motion-base).
+/* A ghost of the dropped offer, kept for one removal window (CheckoutWorkspace.LineLeaveDelay → --motion-base).
    Listed after .line-meta/.line-was so this equal-specificity rule wins the `animation` shorthand. */
 .offer-exit-ghost {
     overflow: hidden;
@@ -99,5 +150,21 @@
     .line-was,
     .offer-exit-ghost {
         animation: none;
+    }
+}
+
+@media (width <= 36rem) {
+    .sale-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .line-info {
+        flex: 1 1 100%;
+    }
+
+    .line-amounts {
+        margin-inline-start: auto;
     }
 }

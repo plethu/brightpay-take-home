@@ -1,0 +1,32 @@
+.sale-pane {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 32rem;
+    padding: 0;
+    border-inline-start: var(--border-width) solid var(--color-border);
+}
+
+.panel-head {
+    padding-block: var(--space-lg);
+    padding-inline: var(--space-lg);
+    border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.sale-head-line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+}
+
+.sale-count {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+@media (width <= 52rem) {
+    .sale-pane {
+        min-block-size: auto;
+        border-inline-start: 0;
+        border-block-start: var(--border-width) solid var(--color-border);
+    }
+}

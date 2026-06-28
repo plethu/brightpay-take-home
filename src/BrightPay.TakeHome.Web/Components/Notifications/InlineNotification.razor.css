@@ -1,0 +1,35 @@
+.banner-error {
+    animation: checkout-error-in 220ms var(--easing-standard);
+}
+
+.banner-error-exit {
+    overflow: hidden;
+    /* Duration mirrors CheckoutNotificationController.ErrorExitDelay; source of truth is --motion-error-exit. */
+    animation: checkout-error-out var(--motion-error-exit) var(--easing-standard) forwards;
+}
+
+@keyframes checkout-error-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes checkout-error-out {
+    from {
+        opacity: 1;
+        transform: none;
+        max-block-size: 4rem;
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-4px);
+        max-block-size: 0;
+    }
+}

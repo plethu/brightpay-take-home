@@ -1,0 +1,19 @@
+.checkout-page {
+    display: flex;
+    flex-direction: column;
+}
+
+.till-e {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 23rem);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: clip;
+}
+
+@media (width <= 52rem) {
+    .till-e {
+        grid-template-columns: 1fr;
+    }
+}

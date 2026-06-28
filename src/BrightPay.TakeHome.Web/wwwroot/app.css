@@ -48,7 +48,7 @@
 
         /* Motion. Exit durations are mirrored by C# removal timers; see
            CheckoutNotificationController (ToastExitDelay/ErrorExitDelay) and
-           CheckoutPage.LineLeaveDelay (--motion-base). Keep both sides in sync. */
+           CheckoutWorkspace.LineLeaveDelay (--motion-base). Keep both sides in sync. */
         --motion-fast: 120ms;
         --motion-base: 200ms;
         --motion-toast-exit: 160ms;

@@ -1,0 +1,48 @@
+@using BrightPay.TakeHome.Web.Features.Checkout.Projection
+@inject IStringLocalizer<SharedResource> Localizer
+
+<section class="sale-pane" aria-labelledby="sale-hd">
+    <div class="panel-head sale-head-line">
+        <h2 id="sale-hd">@Localizer["CheckoutCurrentSale"]</h2>
+        <span class="sale-count" aria-live="polite">
+            @if (!Totals.IsEmpty)
+            {
+                @Localizer["CheckoutItemCount", Totals.ItemCount]
+            }
+        </span>
+    </div>
+    <Receipt Lines="@Lines"
+             LeavingLines="@LeavingLines"
+             LeavingOffers="@LeavingOffers"
+             IsEmpty="@(Totals.IsEmpty && LeavingLines.Count == 0)"
+             OnIncrement="@OnIncrement"
+             OnDecrement="@OnDecrement" />
+    <CheckoutTotals Totals="@Totals" OnClear="@OnClear" OnCharge="@OnCharge" />
+</section>
+
+@code {
+    [Parameter]
+    public required CheckoutTotalsView Totals { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<CheckoutReceiptLineView> Lines { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<CheckoutReceiptLineView> LeavingLines { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyDictionary<string, CheckoutReceiptLineView> LeavingOffers { get; set; } =
+        new Dictionary<string, CheckoutReceiptLineView>();
+
+    [Parameter]
+    public EventCallback<string> OnIncrement { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDecrement { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    [Parameter]
+    public EventCallback OnCharge { get; set; }
+}

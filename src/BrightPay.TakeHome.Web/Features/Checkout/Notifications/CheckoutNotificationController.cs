@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Localization;
 
-namespace BrightPay.TakeHome.Web.Components.Checkout;
+namespace BrightPay.TakeHome.Web.Features.Checkout.Notifications;
 
 internal sealed class CheckoutNotificationController : IDisposable
 {

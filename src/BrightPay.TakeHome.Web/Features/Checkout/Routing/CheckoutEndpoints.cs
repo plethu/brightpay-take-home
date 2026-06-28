@@ -68,7 +68,7 @@ public static class CheckoutEndpoints
 
     private static IResult Clear(
         HttpContext httpContext,
-        [FromForm] CheckoutEmptyCommand command,
+        [FromForm] CheckoutPostCommand command,
         ICheckoutCatalogService catalog,
         ICheckoutBasketStore basketStore)
     {
@@ -80,7 +80,7 @@ public static class CheckoutEndpoints
 
     private static async Task<IResult> Charge(
         HttpContext httpContext,
-        [FromForm] CheckoutEmptyCommand command,
+        [FromForm] CheckoutPostCommand command,
         ICheckoutCatalogService catalog,
         ICheckoutBasketStore basketStore,
         CancellationToken cancellationToken)

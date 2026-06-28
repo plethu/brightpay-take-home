@@ -1,0 +1,73 @@
+.line-qty-control {
+    display: inline-grid;
+    grid-auto-flow: column;
+    align-items: stretch;
+    block-size: var(--touch-target-min);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    overflow: clip;
+}
+
+.line-qty-control form {
+    display: contents;
+}
+
+.line-step {
+    display: grid;
+    place-items: center;
+    min-block-size: 0;
+    inline-size: var(--touch-target-min);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--motion-fast) var(--easing-standard),
+        color var(--motion-fast) var(--easing-standard),
+        opacity var(--motion-fast) var(--easing-standard);
+}
+
+.line-step:disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.42;
+}
+
+.line-step:hover:not(:disabled) {
+    background: var(--color-canvas);
+}
+
+.line-step[data-act="dec"]:hover {
+    background: var(--color-danger-surface);
+    color: var(--color-danger-text);
+}
+
+.line-step-icon {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
+}
+
+/* Plays only when the keyed .line-qty node remounts (a quantity change); see QuantityStepper.razor.
+   Reduced motion is handled globally in app.css. */
+.line-qty {
+    display: grid;
+    place-items: center;
+    min-inline-size: 1.75rem;
+    padding-inline: var(--space-xs);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    animation: qty-pulse var(--motion-base) var(--easing-standard);
+}
+
+@keyframes qty-pulse {
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: scale(1.12);
+    }
+}

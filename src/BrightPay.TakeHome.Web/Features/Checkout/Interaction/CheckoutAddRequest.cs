@@ -1,3 +1,3 @@
-namespace BrightPay.TakeHome.Web.Components.Checkout;
+namespace BrightPay.TakeHome.Web.Features.Checkout.Interaction;
 
 public sealed record CheckoutAddRequest(string Sku, int Quantity);

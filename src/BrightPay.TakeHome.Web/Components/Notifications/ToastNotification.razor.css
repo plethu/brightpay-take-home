@@ -17,7 +17,7 @@
     font-weight: 700;
 }
 
-/* A toast appearing on an empty corner slides in. Driven by the keyed remount in CheckoutToast.razor,
+/* A toast appearing on an empty corner slides in. Driven by the keyed remount in ToastNotification.razor,
    not by the base class, so an in-place update (which carries .toast-pulse or no animation class
    instead) doesn't replay the entrance. */
 .toast-enter {
