@@ -11,19 +11,23 @@
         }
     </div>
     <div class="total-actions">
-        <EditForm Model="@_clearModel" FormName="checkout-clear" class="action-form action-form-clear" method="post" action="@CheckoutRoutes.Clear" data-clear-form>
-            <input type="hidden" name="submitted" value="true">
-            <button @ref="_clearButtonRef" type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty" @onclick="@OpenClearDialog" @onclick:preventDefault="true">@Localizer["CheckoutClear"]</button>
-        </EditForm>
-        <EditForm Model="@_chargeModel" FormName="checkout-charge" class="action-form action-form-checkout" method="post" action="@CheckoutRoutes.Charge">
-            <input type="hidden" name="submitted" value="true">
-            <button type="submit" class="btn btn-checkout" data-action="checkout" disabled="@Totals.IsEmpty" @onclick="@OnCharge" @onclick:preventDefault="true">
-                <span class="checkout-label">@Localizer["CheckoutCharge"]</span>
-                @* Keyed on the total so a change remounts the node and replays amount-pulse — the no-JS
-                   twin of the removed pulse(.checkout-amount). *@
-                <span @key="@Totals.Total" class="checkout-amount">@Totals.Total</span>
-            </button>
-        </EditForm>
+        <div class="action-form action-form-clear">
+            <EditForm Model="@_clearModel" FormName="checkout-clear" method="post" action="@CheckoutRoutes.Clear" data-clear-form>
+                <input type="hidden" name="submitted" value="true">
+                <button @ref="_clearButtonRef" type="submit" class="btn btn-clear" data-action="clear" disabled="@Totals.IsEmpty" @onclick="@OpenClearDialog" @onclick:preventDefault="true">@Localizer["CheckoutClear"]</button>
+            </EditForm>
+        </div>
+        <div class="action-form action-form-checkout">
+            <EditForm Model="@_chargeModel" FormName="checkout-charge" method="post" action="@CheckoutRoutes.Charge">
+                <input type="hidden" name="submitted" value="true">
+                <button type="submit" class="btn btn-checkout" data-action="checkout" disabled="@Totals.IsEmpty" @onclick="@OnCharge" @onclick:preventDefault="true">
+                    <span class="checkout-label">@Localizer["CheckoutCharge"]</span>
+                    @* Keyed on the total so a change remounts the node and replays amount-pulse — the no-JS
+                       twin of the removed pulse(.checkout-amount). *@
+                    <span @key="@Totals.Total" class="checkout-amount">@Totals.Total</span>
+                </button>
+            </EditForm>
+        </div>
     </div>
 
     @if (_showClearDialog)

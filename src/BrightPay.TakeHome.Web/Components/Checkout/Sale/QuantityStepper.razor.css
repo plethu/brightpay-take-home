@@ -9,15 +9,18 @@
     overflow: clip;
 }
 
-.line-qty-control form {
-    display: contents;
+.line-step-cell {
+    display: grid;
+    block-size: 100%;
+    inline-size: var(--touch-target-min);
 }
 
 .line-step {
     display: grid;
     place-items: center;
+    block-size: 100%;
     min-block-size: 0;
-    inline-size: var(--touch-target-min);
+    inline-size: 100%;
     padding: 0;
     border: 0;
     background: transparent;

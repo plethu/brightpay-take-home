@@ -13,12 +13,15 @@
 }
 
 .total-actions {
+    --checkout-action-height: calc(var(--touch-target-min) + var(--space-sm));
+
     display: flex;
+    align-items: stretch;
     gap: var(--space-md);
 }
 
 .action-form {
-    display: flex;
+    display: grid;
     min-inline-size: 0;
 }
 
@@ -31,6 +34,7 @@
 }
 
 .action-form .btn {
+    block-size: var(--checkout-action-height);
     inline-size: 100%;
 }
 

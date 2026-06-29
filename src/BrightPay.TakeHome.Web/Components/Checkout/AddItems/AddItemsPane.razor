@@ -5,50 +5,52 @@
 <section class="pane add-pane" aria-labelledby="add-hd">
     <EditForm EditContext="@_editContext" FormName="checkout-add" class="add-form" method="post" action="@CheckoutRoutes.Add">
         <DataAnnotationsValidator />
-        <div class="add-head">
-            <h2 class="pane-title" id="add-hd">@Localizer["CheckoutAddHeading"]</h2>
-            <div class="qty">
-                <label for="qty">@Localizer["CheckoutQuantityLabel"]</label>
-                <div class="qty-control">
-                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]"
-                            disabled="@(_formModel.Quantity <= 1)"
-                            @onclick="@(() => _formModel.Quantity = Math.Max(1, _formModel.Quantity - 1))">-</button>
-                    <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" @bind="_formModel.Quantity">
-                    <button type="button" class="qty-step" aria-label="@Localizer["CheckoutIncreaseQuantity"]"
-                            @onclick="@(() => _formModel.Quantity++)">+</button>
+        <div class="add-flow">
+            <div class="add-head">
+                <h2 class="pane-title" id="add-hd">@Localizer["CheckoutAddHeading"]</h2>
+                <div class="qty">
+                    <label for="qty">@Localizer["CheckoutQuantityLabel"]</label>
+                    <div class="qty-control">
+                        <button type="button" class="qty-step" aria-label="@Localizer["CheckoutDecreaseQuantity"]"
+                                disabled="@(_formModel.Quantity <= 1)"
+                                @onclick="@(() => _formModel.Quantity = Math.Max(1, _formModel.Quantity - 1))">-</button>
+                        <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" @bind="_formModel.Quantity">
+                        <button type="button" class="qty-step" aria-label="@Localizer["CheckoutIncreaseQuantity"]"
+                                @onclick="@(() => _formModel.Quantity++)">+</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="manual">
-            <div class="scan-form">
-                <div class="field">
-                    <label for="scan">@Localizer["CheckoutScanLabel"]</label>
-                    <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1"
-                           placeholder="@Localizer["CheckoutScanPlaceholder"]"
-                           aria-describedby="scan-alert"
-                           aria-invalid="@(ErrorIsInvalid ? "true" : "false")"
-                           value="@_formModel.ManualSku"
-                           @oninput="@HandleManualSkuInput">
-                    <ValidationMessage For="() => _formModel.ManualSku" />
+            <div class="manual">
+                <div class="scan-form">
+                    <div class="field">
+                        <label for="scan">@Localizer["CheckoutScanLabel"]</label>
+                        <input id="scan" name="manualSku" data-scan autocomplete="off" maxlength="1"
+                               placeholder="@Localizer["CheckoutScanPlaceholder"]"
+                               aria-describedby="scan-alert"
+                               aria-invalid="@(ErrorIsInvalid ? "true" : "false")"
+                               value="@_formModel.ManualSku"
+                               @oninput="@HandleManualSkuInput">
+                        <ValidationMessage For="() => _formModel.ManualSku" />
+                    </div>
+                    <button type="submit" class="btn btn-secondary" @onclick="@AddManualSkuAsync" @onclick:preventDefault="true">@Localizer["CheckoutAddButton"]</button>
                 </div>
-                <button type="submit" class="btn btn-secondary" @onclick="@AddManualSkuAsync" @onclick:preventDefault="true">@Localizer["CheckoutAddButton"]</button>
+                <InlineNotification Message="@ErrorMessage" IsLeaving="@ErrorIsLeaving" />
             </div>
-            <InlineNotification Message="@ErrorMessage" IsLeaving="@ErrorIsLeaving" />
-        </div>
 
-        <div class="sku-pad" role="group" aria-label="@Localizer["CheckoutSkuPadLabel"]">
-            @foreach (CheckoutCatalogItemView item in Catalog)
-            {
-                <button type="submit" name="sku" value="@item.Sku" class="sku-tile" @onclick="@(() => AddSkuAsync(item.Sku))" @onclick:preventDefault="true">
-                    <span class="tile-name">@item.Name <span class="tile-sku">@item.Sku</span></span>
-                    <span class="tile-price">@item.UnitPrice</span>
-                    @if (item.OfferLabel is not null)
-                    {
-                        <OfferBadge Label="@item.OfferLabel" />
-                    }
-                </button>
-            }
+            <div class="sku-pad" role="group" aria-label="@Localizer["CheckoutSkuPadLabel"]">
+                @foreach (CheckoutCatalogItemView item in Catalog)
+                {
+                    <button type="submit" name="sku" value="@item.Sku" class="sku-tile" @onclick="@(() => AddSkuAsync(item.Sku))" @onclick:preventDefault="true">
+                        <span class="tile-name">@item.Name <span class="tile-sku">@item.Sku</span></span>
+                        <span class="tile-price">@item.UnitPrice</span>
+                        @if (item.OfferLabel is not null)
+                        {
+                            <OfferBadge Label="@item.OfferLabel" />
+                        }
+                    </button>
+                }
+            </div>
         </div>
     </EditForm>
 </section>

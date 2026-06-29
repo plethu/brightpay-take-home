@@ -2,30 +2,34 @@
 @inject IStringLocalizer<SharedResource> Localizer
 
 <div class="line-qty-control" role="group" aria-label="@Localizer["CheckoutLineQuantityLabel", Name]">
-    <EditForm Model="@_decrementModel" FormName="@($"checkout-decrement-{Sku}")" method="post" action="@CheckoutRoutes.Decrement">
-        <input type="hidden" name="sku" value="@Sku">
-        <button type="submit" class="line-step" data-act="dec" aria-label="@DecreaseLabel" title="@DecreaseLabel" @onclick="@(() => OnDecrement.InvokeAsync(Sku))" @onclick:preventDefault="true">
-            @if (Quantity == 1)
-            {
-                <svg class="line-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-                    <path d="M18 6v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6" />
-                </svg>
-            }
-            else
-            {
-                @("-")
-            }
-        </button>
-    </EditForm>
+    <div class="line-step-cell">
+        <EditForm Model="@_decrementModel" FormName="@($"checkout-decrement-{Sku}")" method="post" action="@CheckoutRoutes.Decrement">
+            <input type="hidden" name="sku" value="@Sku">
+            <button type="submit" class="line-step" data-act="dec" aria-label="@DecreaseLabel" title="@DecreaseLabel" @onclick="@(() => OnDecrement.InvokeAsync(Sku))" @onclick:preventDefault="true">
+                @if (Quantity == 1)
+                {
+                    <svg class="line-step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                        <path d="M18 6v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6" />
+                    </svg>
+                }
+                else
+                {
+                    @("-")
+                }
+            </button>
+        </EditForm>
+    </div>
     @* Keyed on Quantity so a change remounts the node and replays qty-pulse — the no-JS equivalent of
        the removed pulse(.line-qty). Unchanged renders reuse the node and stay still. *@
     <span @key="@Quantity" class="line-qty" aria-live="polite">@Quantity</span>
-    <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment">
-        <input type="hidden" name="sku" value="@Sku">
-        <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]" @onclick="@(() => OnIncrement.InvokeAsync(Sku))" @onclick:preventDefault="true">+</button>
-    </EditForm>
+    <div class="line-step-cell">
+        <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment">
+            <input type="hidden" name="sku" value="@Sku">
+            <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]" @onclick="@(() => OnIncrement.InvokeAsync(Sku))" @onclick:preventDefault="true">+</button>
+        </EditForm>
+    </div>
 </div>
 
 @code {

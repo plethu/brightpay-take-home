@@ -9,17 +9,17 @@
     font-weight: 700;
 }
 
+.add-flow {
+    display: flex;
+    flex-direction: column;
+}
+
 .add-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
     margin-block-end: var(--space-lg);
-}
-
-.add-form {
-    display: flex;
-    flex-direction: column;
 }
 
 .qty {
@@ -179,5 +179,9 @@
 
     .sku-tile ::deep .offer-badge {
         grid-row: 3;
+    }
+
+    .manual .scan-form {
+        grid-template-columns: 1fr;
     }
 }
