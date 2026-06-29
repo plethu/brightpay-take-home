@@ -144,6 +144,22 @@ globally in `app.css`).
   reduced-motion fallback.
 - Ensure loading, empty, validation-error, and failure states are visible where
   the workflow can reach them.
+
+## Component Ownership
+
+- Before adding or moving a component, ask where its owner and likely reuse
+  belong. Checkout-only workflow surfaces live under `Components/Checkout/<area>`
+  (`AddItems`, `Sale`, `Shared`); reusable notification surfaces live under
+  `Components/Notifications`; non-visual request/state/controller types live
+  under `Features/Checkout/<area>`, not `Components`.
+- Keep route/page components as thin wrappers and workspace/pane components as
+  composition boundaries. Leaf controls should own only their local markup,
+  events, and CSS.
+- Review names against the cashier workflow, not the old implementation shape:
+  prefer `AddItemsPane`, `SalePane`, `ReceiptLine`, and `ToastNotification` over
+  source-oriented names such as pad, alert, or helper when the component has a
+  clearer product role.
+
 ## Browser Code & CSS
 
 - Do not add a TypeScript toolchain before there is browser code. When browser
@@ -152,6 +168,14 @@ globally in `app.css`).
   collocated JavaScript modules.
 - Prefer Blazor CSS isolation (`*.razor.css`) for component styles. Use
   `wwwroot/app.css` for tokens, cascade layers, resets, and global primitives.
+- For layout around framework-rendered elements such as `EditForm`'s generated
+  `<form>`, add component-owned wrapper elements and style those wrappers.
+  Do not use `::deep` to repair parent layout. Reserve `::deep` for intentionally
+  styling child component output, and keep it narrowly scoped.
+- Keep DOM order aligned with keyboard/form semantics. In a shared form, the
+  first submit button is the Enter-key default; if visual order must differ from
+  submit semantics, preserve DOM order and use an owned wrapper with flex/grid
+  ordering.
 - Define design tokens for color, spacing, radius, typography, motion, shadows,
   and z-index. Arbitrary one-off constants in components are review concerns
   unless the local exception is explained.
@@ -178,6 +202,13 @@ globally in `app.css`).
   do not upload reports to public temporary storage unless explicitly chosen.
 - Defer Unlighthouse until the app has enough routes that crawling is valuable.
 - Prefer tests that assert user-visible behavior over implementation details.
+- For layout-affecting component placement or CSS-isolation changes, add
+  Playwright checks for visible contracts that markup tests cannot see: relative
+  order, alignment, equal control heights, and button widths in the running
+  browser.
+- For no-JS Playwright coverage of non-motion behavior, use the browser's
+  reduced-motion preference when animations can make newly rendered controls
+  unstable. Do not change animation durations, inject styles, or add sleeps.
 
 ## Verification
 
