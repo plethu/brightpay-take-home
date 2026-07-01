@@ -13,6 +13,4 @@ public sealed record PricedBasketLine(
     IReadOnlyList<AppliedOfferSummary>? AppliedOffers = null)
 {
     public IReadOnlyList<AppliedOfferSummary> AppliedOffers { get; init; } = AppliedOffers ?? [];
-
-    public AppliedOfferSummary? AppliedOffer => AppliedOffers.Count == 0 ? null : AppliedOffers[0];
 }

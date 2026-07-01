@@ -10,7 +10,7 @@ public sealed record OfferApplicationPlan(IReadOnlyList<OfferApplication> Applic
 
     public Money SavingsForLine(string lineReference) =>
         Applications
-            .Where(application => application.Scope != OfferScope.Basket)
+            .Where(application => application.Scope.IsLineAttributed())
             .SelectMany(application => application.LineEffects)
             .Where(effect => string.Equals(effect.LineReference, lineReference, StringComparison.Ordinal))
             .Aggregate(CheckoutMoney.Zero, (sum, effect) => sum + (effect.AllocatedSavings ?? CheckoutMoney.Zero));
@@ -18,11 +18,11 @@ public sealed record OfferApplicationPlan(IReadOnlyList<OfferApplication> Applic
     public IReadOnlyList<OfferApplication> ApplicationsForLine(string lineReference) =>
         [
             .. Applications
-                .Where(application => application.Scope != OfferScope.Basket && application.LineEffects.Any(effect =>
+                .Where(application => application.Scope.IsLineAttributed() && application.LineEffects.Any(effect =>
                     string.Equals(effect.LineReference, lineReference, StringComparison.Ordinal)))
                 .OrderBy(application => application.Code, StringComparer.Ordinal),
         ];
 
-    public IReadOnlyList<OfferApplication> BasketApplications =>
-        [.. Applications.Where(application => application.Scope == OfferScope.Basket)];
+    public IReadOnlyList<OfferApplication> AdjustmentApplications =>
+        [.. Applications.Where(application => !application.Scope.IsLineAttributed())];
 }

@@ -157,7 +157,8 @@ public sealed class CheckoutTransactionTests
                 Savings = CheckoutMoney.FromPence(20m),
                 Total = CheckoutMoney.FromPence(130m),
             }, options => options.ExcludingMissingMembers());
-        pricedBasket.Lines.Single().AppliedOffer!.Code.Should().Be("A-3-FOR-130");
+        pricedBasket.Lines.Single().AppliedOffers.Should().ContainSingle()
+            .Which.Code.Should().Be("A-3-FOR-130");
     }
 
     [Fact]
@@ -212,6 +213,77 @@ public sealed class CheckoutTransactionTests
                 Savings = CheckoutMoney.FromPence(25m),
             });
         pricedBasket.Total.Amount.Should().Be(55m);
+    }
+
+    [Fact]
+    public void ProjectSurfacesGroupScopedOfferAsAdjustmentNotLineSavings()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1), new BasketLine(Sku.From("B"), 1)]);
+        ProductPrice[] prices =
+        [
+            new(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            new(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+        ];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("GROUP-25", Sku.From("A"), OfferType.None, new GroupConfiguration(), OfferScope.Group),
+        ];
+
+        PricedBasket pricedBasket = new PricedBasketProjector(prices, offers, [new FakeGroupEvaluator()]).Project(basket);
+
+        // A group promotion spans several lines, so its saving is shown once as an adjustment rather
+        // than split into misleading per-line discounts; per-line totals stay at their subtotals.
+        pricedBasket.Lines.Sum(line => line.Total.Amount).Should().Be(80m);
+        pricedBasket.Lines.SelectMany(line => line.AppliedOffers).Should().BeEmpty();
+        pricedBasket.Adjustments.Should().ContainSingle()
+            .Which.Should().BeEquivalentTo(new
+            {
+                Code = "GROUP-25",
+                Savings = CheckoutMoney.FromPence(25m),
+            });
+        pricedBasket.Total.Amount.Should().Be(55m);
+    }
+
+    [Fact]
+    public void PlannerStacksStackableOfferOnTopOfExclusiveClaimingSameUnit()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1)]);
+        ProductPrice[] prices = [new(Sku.From("A"), CheckoutMoney.FromPence(50m))];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("A-EXCL", Sku.From("A"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer(
+                "A-STACK",
+                Sku.From("A"),
+                OfferType.QuantityForFixedPrice,
+                new LineConfiguration(),
+                combinationRule: OfferCombinationRule.Stackable),
+        ];
+
+        OfferApplicationPlan plan = PlanWithFakeEvaluators(basket, prices, offers, [new FakeLineEvaluator()]);
+
+        // The exclusive offer reserves the single unit; the stackable offer reserves nothing and so
+        // applies alongside it, yielding both savings on the one unit.
+        plan.Applications.Select(application => application.Code).Should().Equal("A-EXCL", "A-STACK");
+        plan.TotalSavings.Should().Be(CheckoutMoney.FromPence(20m));
+    }
+
+    [Fact]
+    public void PlannerSelectsSingleExclusiveOfferWhenSeveralClaimTheSameUnit()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1)]);
+        ProductPrice[] prices = [new(Sku.From("A"), CheckoutMoney.FromPence(50m))];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("A-LINE-10", Sku.From("A"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer("A-LINE-5", Sku.From("A"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+        ];
+
+        OfferApplicationPlan plan = PlanWithFakeEvaluators(basket, prices, offers, [new FakeLineEvaluator()]);
+
+        // Both exclusive offers want the one unit, so only the higher-saving one is selected.
+        plan.Applications.Select(application => application.Code).Should().Equal("A-LINE-10");
+        plan.TotalSavings.Should().Be(CheckoutMoney.FromPence(10m));
     }
 
     [Fact]

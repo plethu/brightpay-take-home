@@ -69,7 +69,7 @@ public sealed class PricedBasketProjector
 
         IReadOnlyList<PricedBasketAdjustment> adjustments =
         [
-            .. offerPlan.BasketApplications.Select(application => new PricedBasketAdjustment(application.Code, application.Saving)),
+            .. offerPlan.AdjustmentApplications.Select(application => new PricedBasketAdjustment(application.Code, application.Saving)),
         ];
         Money savings = offerPlan.TotalSavings;
         Money total = subtotal - savings;
