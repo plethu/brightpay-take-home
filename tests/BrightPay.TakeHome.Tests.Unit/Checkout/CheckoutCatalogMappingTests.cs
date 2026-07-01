@@ -21,6 +21,9 @@ public sealed class CheckoutCatalogMappingTests
             Sku = "A",
             Type = (int)OfferType.QuantityForFixedPrice,
             State = (int)OfferState.Active,
+            Scope = (int)OfferScope.Basket,
+            Priority = 5,
+            CombinationRule = (int)OfferCombinationRule.Stackable,
             ConfigurationVersion = 1,
             ConfigurationJson = QuantityOfferConfigurationJson(3, CheckoutMoney.CurrencyCode, 130m),
         });
@@ -31,6 +34,9 @@ public sealed class CheckoutCatalogMappingTests
                 Quantity = 3,
                 FixedPrice = CheckoutMoney.FromPence(130m),
             });
+        offer.Scope.Should().Be(OfferScope.Basket);
+        offer.Priority.Should().Be(5);
+        offer.CombinationRule.Should().Be(OfferCombinationRule.Stackable);
     }
 
     [Fact]
@@ -40,6 +46,24 @@ public sealed class CheckoutCatalogMappingTests
 
         action.Should().Throw<ArgumentOutOfRangeException>()
             .WithMessage("*Unknown offer type*");
+    }
+
+    [Fact]
+    public void MapperRejectsUnknownOfferScope()
+    {
+        Action action = () => CheckoutCatalogMapper.ToOfferDefinition(OfferEntity(scope: 999));
+
+        action.Should().Throw<ArgumentOutOfRangeException>()
+            .WithMessage("*Unknown offer scope*");
+    }
+
+    [Fact]
+    public void MapperRejectsUnknownOfferCombinationRule()
+    {
+        Action action = () => CheckoutCatalogMapper.ToOfferDefinition(OfferEntity(combinationRule: 999));
+
+        action.Should().Throw<ArgumentOutOfRangeException>()
+            .WithMessage("*Unknown offer combination rule*");
     }
 
     [Fact]
@@ -92,6 +116,8 @@ public sealed class CheckoutCatalogMappingTests
 
     private static CheckoutOfferEntity OfferEntity(
         int type = (int)OfferType.QuantityForFixedPrice,
+        int scope = (int)OfferScope.Line,
+        int combinationRule = (int)OfferCombinationRule.Exclusive,
         int configurationVersion = 1,
         string configurationJson = "") =>
         new()
@@ -100,6 +126,9 @@ public sealed class CheckoutCatalogMappingTests
             Sku = "A",
             Type = type,
             State = (int)OfferState.Active,
+            Scope = scope,
+            Priority = 0,
+            CombinationRule = combinationRule,
             ConfigurationVersion = configurationVersion,
             ConfigurationJson = string.IsNullOrEmpty(configurationJson)
                 ? QuantityOfferConfigurationJson(3, CheckoutMoney.CurrencyCode, 130m)

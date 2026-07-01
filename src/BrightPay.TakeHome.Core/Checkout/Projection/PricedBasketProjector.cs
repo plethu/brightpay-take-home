@@ -56,12 +56,14 @@ public sealed class PricedBasketProjector
             Money lineSubtotal = price.UnitPrice * line.Quantity;
             string lineReference = LineReference(line);
             Money lineSavings = offerPlan.SavingsForLine(lineReference);
-            AppliedOfferSummary? appliedOffer = offerPlan.ApplicationsForLine(lineReference)
-                .Select(application => new AppliedOfferSummary(application.Code, application.Sku, application.Applications, application.Saving))
-                .FirstOrDefault();
+            IReadOnlyList<AppliedOfferSummary> appliedOffers =
+            [
+                .. offerPlan.ApplicationsForLine(lineReference)
+                    .Select(application => new AppliedOfferSummary(application.Code, application.Sku, application.Applications, application.Saving)),
+            ];
 
             Money lineTotal = lineSubtotal - lineSavings;
-            lines.Add(new PricedBasketLine(line.Sku, line.Quantity, price.UnitPrice, lineSubtotal, lineSavings, lineTotal, appliedOffer));
+            lines.Add(new PricedBasketLine(line.Sku, line.Quantity, price.UnitPrice, lineSubtotal, lineSavings, lineTotal, appliedOffers));
             subtotal += lineSubtotal;
         }
 

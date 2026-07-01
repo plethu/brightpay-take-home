@@ -6,10 +6,16 @@ public sealed class CheckoutOfferEntity
 
     public required string Sku { get; init; }
 
-    // OfferType / OfferState persisted as their underlying int; the mapper validates the value.
+    // Offer enums are persisted as their underlying int; the mapper validates the value.
     public int Type { get; init; }
 
     public int State { get; init; }
+
+    public int Scope { get; init; }
+
+    public int Priority { get; init; }
+
+    public int CombinationRule { get; init; }
 
     public int ConfigurationVersion { get; init; }
 

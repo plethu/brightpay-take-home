@@ -15,6 +15,13 @@
     inline-size: var(--touch-target-min);
 }
 
+/* EditForm renders the <form> as a child component, so it never receives this
+   component's CSS-isolation scope attribute; ::deep reaches the rendered form. */
+.line-step-cell ::deep .line-step-form {
+    display: grid;
+    block-size: 100%;
+}
+
 .line-step {
     display: grid;
     place-items: center;

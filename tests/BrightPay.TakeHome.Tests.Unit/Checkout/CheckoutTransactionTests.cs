@@ -161,6 +161,60 @@ public sealed class CheckoutTransactionTests
     }
 
     [Fact]
+    public void ProjectCarriesAllSelectedLineOfferSummaries()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1)]);
+        ProductPrice[] prices = [new(Sku.From("A"), CheckoutMoney.FromPence(50m))];
+        OfferDefinition[] offers =
+        [
+            FakeOffer(
+                "A-LINE-10",
+                Sku.From("A"),
+                OfferType.QuantityForFixedPrice,
+                new LineConfiguration(),
+                combinationRule: OfferCombinationRule.Stackable),
+            FakeOffer(
+                "A-LINE-5",
+                Sku.From("A"),
+                OfferType.QuantityForFixedPrice,
+                new LineConfiguration(),
+                combinationRule: OfferCombinationRule.Stackable),
+        ];
+
+        PricedBasket pricedBasket = new PricedBasketProjector(prices, offers, [new FakeLineEvaluator()]).Project(basket);
+
+        pricedBasket.Lines.Should().ContainSingle()
+            .Which.AppliedOffers.Select(offer => offer.Code)
+            .Should().Equal("A-LINE-10", "A-LINE-5");
+    }
+
+    [Fact]
+    public void ProjectKeepsBasketScopedSavingsOutOfLineTotals()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1), new BasketLine(Sku.From("B"), 1)]);
+        ProductPrice[] prices =
+        [
+            new(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            new(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+        ];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("BASKET-25", Sku.From("A"), OfferType.None, new GroupConfiguration(), OfferScope.Basket),
+        ];
+
+        PricedBasket pricedBasket = new PricedBasketProjector(prices, offers, [new FakeGroupEvaluator()]).Project(basket);
+
+        pricedBasket.Lines.Sum(line => line.Total.Amount).Should().Be(80m);
+        pricedBasket.Adjustments.Should().ContainSingle()
+            .Which.Should().BeEquivalentTo(new
+            {
+                Code = "BASKET-25",
+                Savings = CheckoutMoney.FromPence(25m),
+            });
+        pricedBasket.Total.Amount.Should().Be(55m);
+    }
+
+    [Fact]
     public void QuantityOfferApplicationRecordsAffectedLineQuantity()
     {
         OfferDefinition offer = new(
@@ -331,8 +385,9 @@ public sealed class CheckoutTransactionTests
         Sku sku,
         OfferType type,
         OfferConfiguration configuration,
-        OfferScope scope = OfferScope.Line) =>
-        new(code, sku, type, OfferState.Active, configuration, scope);
+        OfferScope scope = OfferScope.Line,
+        OfferCombinationRule combinationRule = OfferCombinationRule.Exclusive) =>
+        new(code, sku, type, OfferState.Active, configuration, scope, CombinationRule: combinationRule);
 
     private sealed record LineConfiguration : OfferConfiguration;
 
@@ -357,10 +412,15 @@ public sealed class CheckoutTransactionTests
                     offer.Priority,
                     offer.CombinationRule,
                     1,
-                    CheckoutMoney.FromPence(10m),
-                    [new OfferApplicationLineEffect(offer.Sku.Value, offer.Sku, 1, CheckoutMoney.FromPence(10m))]),
+                    LineSavingFor(offer.Code),
+                    [new OfferApplicationLineEffect(offer.Sku.Value, offer.Sku, 1, LineSavingFor(offer.Code))]),
             ];
         }
+
+        private static Money LineSavingFor(string code) =>
+            string.Equals(code, "A-LINE-5", StringComparison.Ordinal)
+                ? CheckoutMoney.FromPence(5m)
+                : CheckoutMoney.FromPence(10m);
     }
 
     private sealed class FakeGroupEvaluator : OfferEvaluator<GroupConfiguration>

@@ -138,6 +138,37 @@ public sealed class CartPageTests : BunitContext
     }
 
     [Fact]
+    public void CheckoutProjectionCarriesMultipleLineOfferLabels()
+    {
+        CheckoutViewProjector projector = Services.GetRequiredService<CheckoutViewProjector>();
+        CheckoutCatalogSnapshot catalog = new(
+            [new ProductPrice(Sku.From("A"), CheckoutMoney.FromPence(50m))],
+            [
+                StackableQuantityOffer("A-3-FOR-130", CheckoutMoney.FromPence(130m)),
+                StackableQuantityOffer("A-3-FOR-140", CheckoutMoney.FromPence(140m)),
+            ],
+            [new QuantityForFixedPriceEvaluator()]);
+        IReadOnlyList<CheckoutCatalogItem> catalogItems =
+        [
+            new(
+                Sku.From("A"),
+                50m,
+                [
+                    QuantityOfferItem("A-3-FOR-130", CheckoutMoney.FromPence(130m)),
+                    QuantityOfferItem("A-3-FOR-140", CheckoutMoney.FromPence(140m)),
+                ]),
+        ];
+
+        CheckoutViewModel viewModel = projector.Project(
+            catalog,
+            catalogItems,
+            new BasketSnapshot([new BasketLine(Sku.From("A"), 3)]));
+
+        viewModel.Lines.Should().ContainSingle()
+            .Which.OfferLabels.Should().Equal("3 for £1.30", "3 for £1.40");
+    }
+
+    [Fact]
     public void ReceiptRendersBasketAdjustmentRows()
     {
         IRenderedComponent<Receipt> component =
@@ -200,6 +231,24 @@ public sealed class CartPageTests : BunitContext
         new("A", "Apple", "£0.50", "3 for £1.30"),
         new("B", "Banana", "£0.30", "2 for £0.45"),
     ];
+
+    private static OfferDefinition StackableQuantityOffer(string code, NodaMoney.Money fixedPrice) =>
+        new(
+            code,
+            Sku.From("A"),
+            OfferType.QuantityForFixedPrice,
+            OfferState.Active,
+            new QuantityForFixedPriceConfiguration(3, fixedPrice),
+            CombinationRule: OfferCombinationRule.Stackable);
+
+    private static CheckoutOfferItem QuantityOfferItem(string code, NodaMoney.Money fixedPrice) =>
+        new(
+            code,
+            Sku.From("A"),
+            OfferType.QuantityForFixedPrice,
+            OfferState.Active,
+            1,
+            new QuantityForFixedPriceConfiguration(3, fixedPrice));
 
     private sealed class FakeCheckoutBasketStore : ICheckoutBasketStore
     {

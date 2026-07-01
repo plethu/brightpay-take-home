@@ -249,9 +249,10 @@ public sealed class HomePageSmokeTests : PageTest
 
     private async Task AssertLineQuantityControlAlignedAsync(IPage page, string sku, string skuName)
     {
-        ILocator decrement = page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutDecreaseLineLabel", skuName) });
-        ILocator quantity = page.Locator($".sale-line[data-sku='{sku}'] .line-qty");
-        ILocator increment = page.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutAddOneLabel", skuName) });
+        ILocator line = page.Locator($".sale-line[data-sku='{sku}']");
+        ILocator decrement = line.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutDecreaseLineLabel", skuName) });
+        ILocator quantity = line.Locator(".line-qty");
+        ILocator increment = line.GetByRole(AriaRole.Button, new() { Name = Text("CheckoutAddOneLabel", skuName) });
 
         await Expect(decrement).ToBeVisibleAsync().ConfigureAwait(false);
         await Expect(quantity).ToBeVisibleAsync().ConfigureAwait(false);

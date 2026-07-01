@@ -100,7 +100,10 @@ public sealed class CheckoutViewProjector
     private IReadOnlyList<string> OfferLabelsForLine(
         PricedBasketLine line,
         Dictionary<string, CheckoutOfferItem> offersByCode) =>
-        line.AppliedOffer is not null && offersByCode.TryGetValue(line.AppliedOffer.Code, out CheckoutOfferItem? offer)
-            ? [FormatOfferLabel(offer)]
-            : [];
+        [
+            .. line.AppliedOffers
+                .Select(summary => offersByCode.TryGetValue(summary.Code, out CheckoutOfferItem? offer) ? offer : null)
+                .Where(offer => offer is not null)
+                .Select(offer => FormatOfferLabel(offer!)),
+        ];
 }

@@ -10,4 +10,9 @@ public sealed record PricedBasketLine(
     Money Subtotal,
     Money Savings,
     Money Total,
-    AppliedOfferSummary? AppliedOffer);
+    IReadOnlyList<AppliedOfferSummary>? AppliedOffers = null)
+{
+    public IReadOnlyList<AppliedOfferSummary> AppliedOffers { get; init; } = AppliedOffers ?? [];
+
+    public AppliedOfferSummary? AppliedOffer => AppliedOffers.Count == 0 ? null : AppliedOffers[0];
+}

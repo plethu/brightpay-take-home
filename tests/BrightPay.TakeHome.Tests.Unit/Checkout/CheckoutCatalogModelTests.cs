@@ -29,6 +29,9 @@ public sealed class CheckoutCatalogModelTests
         products.Select(product => product["Sku"]).Should().Equal("A", "B", "C", "D");
         products.Select(product => product["UnitPriceAmount"]).Should().Equal(50m, 30m, 20m, 15m);
         offers.Select(offer => offer["Code"]).Should().Equal("A-3-FOR-130", "B-2-FOR-45");
+        offers.Select(offer => offer["Scope"]).Should().Equal(0, 0);
+        offers.Select(offer => offer["Priority"]).Should().Equal(0, 0);
+        offers.Select(offer => offer["CombinationRule"]).Should().Equal(0, 0);
         offers.Select(offer => offer["ConfigurationVersion"]).Should().Equal(1, 1);
         offers.Select(ConfigurationQuantity).Should().Equal(3, 2);
         offers.Select(ConfigurationMinorUnits).Should().Equal(130m, 45m);

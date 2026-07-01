@@ -3,7 +3,7 @@
 
 <div class="line-qty-control" role="group" aria-label="@Localizer["CheckoutLineQuantityLabel", Name]">
     <div class="line-step-cell">
-        <EditForm Model="@_decrementModel" FormName="@($"checkout-decrement-{Sku}")" method="post" action="@CheckoutRoutes.Decrement">
+        <EditForm Model="@_decrementModel" FormName="@($"checkout-decrement-{Sku}")" method="post" action="@CheckoutRoutes.Decrement" class="line-step-form">
             <input type="hidden" name="sku" value="@Sku">
             <button type="submit" class="line-step" data-act="dec" aria-label="@DecreaseLabel" title="@DecreaseLabel" @onclick="@(() => OnDecrement.InvokeAsync(Sku))" @onclick:preventDefault="true">
                 @if (Quantity == 1)
@@ -25,7 +25,7 @@
        the removed pulse(.line-qty). Unchanged renders reuse the node and stay still. *@
     <span @key="@Quantity" class="line-qty" aria-live="polite">@Quantity</span>
     <div class="line-step-cell">
-        <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment">
+        <EditForm Model="@_incrementModel" FormName="@($"checkout-increment-{Sku}")" method="post" action="@CheckoutRoutes.Increment" class="line-step-form">
             <input type="hidden" name="sku" value="@Sku">
             <button type="submit" class="line-step" data-act="inc" aria-label="@Localizer["CheckoutAddOneLabel", Name]" title="@Localizer["CheckoutAddOneLabel", Name]" @onclick="@(() => OnIncrement.InvokeAsync(Sku))" @onclick:preventDefault="true">+</button>
         </EditForm>

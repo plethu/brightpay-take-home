@@ -32,7 +32,10 @@ internal static partial class CheckoutCatalogMapper
             MapSku(offer.Sku),
             MapOfferType(offer.Type),
             MapOfferState(offer.State),
-            MapConfiguration(offer));
+            MapConfiguration(offer),
+            MapOfferScope(offer.Scope),
+            offer.Priority,
+            MapOfferCombinationRule(offer.CombinationRule));
 
     // Offers require deterministic ordering by code before projection; user-defined to preserve that.
     [MapperIgnoreSource(nameof(CheckoutProductEntity.IsActive))]
@@ -58,6 +61,16 @@ internal static partial class CheckoutCatalogMapper
         Enum.IsDefined((OfferState)value)
             ? (OfferState)value
             : throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown offer state in persisted catalog.");
+
+    private static OfferScope MapOfferScope(int value) =>
+        Enum.IsDefined((OfferScope)value)
+            ? (OfferScope)value
+            : throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown offer scope in persisted catalog.");
+
+    private static OfferCombinationRule MapOfferCombinationRule(int value) =>
+        Enum.IsDefined((OfferCombinationRule)value)
+            ? (OfferCombinationRule)value
+            : throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown offer combination rule in persisted catalog.");
 
     private static Money MapMoney(CheckoutMoneyConfigurationJson money)
     {
