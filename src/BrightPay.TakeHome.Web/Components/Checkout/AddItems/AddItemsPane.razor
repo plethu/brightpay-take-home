@@ -44,10 +44,7 @@
                     <button type="submit" name="sku" value="@item.Sku" class="sku-tile" @onclick="@(() => AddSkuAsync(item.Sku))" @onclick:preventDefault="true">
                         <span class="tile-name">@item.Name <span class="tile-sku">@item.Sku</span></span>
                         <span class="tile-price">@item.UnitPrice</span>
-                        @if (item.OfferLabel is not null)
-                        {
-                            <OfferBadge Label="@item.OfferLabel" />
-                        }
+                        <OfferBadgeList OfferLabels="@item.OfferLabels" />
                     </button>
                 }
             </div>

@@ -8,6 +8,7 @@ using BrightPay.TakeHome.Core.Checkout.Projection;
 using BrightPay.TakeHome.Core.Checkout.Pricing;
 using BrightPay.TakeHome.Core.Checkout.Transactions;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
+using NodaMoney;
 
 namespace BrightPay.TakeHome.Tests.Unit.Checkout;
 
@@ -160,6 +161,113 @@ public sealed class CheckoutTransactionTests
     }
 
     [Fact]
+    public void QuantityOfferApplicationRecordsAffectedLineQuantity()
+    {
+        OfferDefinition offer = new(
+            "A-3-FOR-130",
+            Sku.From("A"),
+            OfferType.QuantityForFixedPrice,
+            OfferState.Active,
+            new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m)));
+        QuantityForFixedPriceEvaluator evaluator = new();
+
+        IReadOnlyList<OfferApplication> applications = evaluator.Evaluate(
+            new BasketSnapshot([new BasketLine(Sku.From("A"), 5)]),
+            offer,
+            new Dictionary<Sku, ProductPrice>
+            {
+                [Sku.From("A")] = new ProductPrice(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            });
+
+        applications.Should().ContainSingle()
+            .Which.LineEffects.Should().ContainSingle()
+            .Which.Should().BeEquivalentTo(new
+            {
+                LineReference = "A",
+                Sku = Sku.From("A"),
+                QuantityConsumed = 3,
+                AllocatedSavings = CheckoutMoney.FromPence(20m),
+            });
+    }
+
+    [Fact]
+    public void BasketPlannerSelectsGlobalBestCompatibleApplication()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1), new BasketLine(Sku.From("B"), 1)]);
+        ProductPrice[] prices =
+        [
+            new(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            new(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+        ];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("A-LINE-10", Sku.From("A"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer("B-LINE-10", Sku.From("B"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer("GROUP-25", Sku.From("A"), OfferType.None, new GroupConfiguration(), OfferScope.Group),
+        ];
+        OfferEvaluatorRegistry registry = new([new FakeLineEvaluator(), new FakeGroupEvaluator()]);
+
+        OfferApplicationPlan plan = new BestCustomerValueOfferApplicationPlanner().Plan(
+            new OfferPlanningContext(basket, prices.ToDictionary(price => price.Sku), offers, registry));
+
+        plan.Applications.Should().ContainSingle()
+            .Which.Code.Should().Be("GROUP-25");
+        plan.TotalSavings.Should().Be(CheckoutMoney.FromPence(25m));
+    }
+
+    [Fact]
+    public void BasketPlannerMaximizesCombinedSavingsOverLargestSingleCandidate()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1), new BasketLine(Sku.From("B"), 1)]);
+        ProductPrice[] prices =
+        [
+            new(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            new(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+        ];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("A-LINE-10", Sku.From("A"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer("B-LINE-10", Sku.From("B"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer("GROUP-15", Sku.From("A"), OfferType.None, new GroupConfiguration(), OfferScope.Group),
+        ];
+
+        OfferApplicationPlan plan = PlanWithFakeEvaluators(
+            basket,
+            prices,
+            offers,
+            [new FakeLineEvaluator(), new FakeGroupEvaluator()]);
+
+        plan.Applications.Select(application => application.Code)
+            .Should().Equal("A-LINE-10", "B-LINE-10");
+        plan.TotalSavings.Should().Be(CheckoutMoney.FromPence(20m));
+    }
+
+    [Fact]
+    public void BasketPlannerOutputIsDeterministicWhenInputsAreReordered()
+    {
+        BasketSnapshot basket = new([new BasketLine(Sku.From("A"), 1), new BasketLine(Sku.From("B"), 1)]);
+        ProductPrice[] prices =
+        [
+            new(Sku.From("A"), CheckoutMoney.FromPence(50m)),
+            new(Sku.From("B"), CheckoutMoney.FromPence(30m)),
+        ];
+        OfferDefinition[] offers =
+        [
+            FakeOffer("B-LINE-10", Sku.From("B"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+            FakeOffer("GROUP-25", Sku.From("A"), OfferType.None, new GroupConfiguration(), OfferScope.Group),
+            FakeOffer("A-LINE-10", Sku.From("A"), OfferType.QuantityForFixedPrice, new LineConfiguration()),
+        ];
+        OfferDefinition[] reorderedOffers = [offers[2], offers[0], offers[1]];
+
+        OfferApplicationPlan first = PlanWithFakeEvaluators(basket, prices, offers, [new FakeGroupEvaluator(), new FakeLineEvaluator()]);
+        OfferApplicationPlan second = PlanWithFakeEvaluators(basket, prices, reorderedOffers, [new FakeLineEvaluator(), new FakeGroupEvaluator()]);
+
+        first.Applications.Select(application => application.Code)
+            .Should().Equal(second.Applications.Select(application => application.Code));
+        first.TotalSavings.Should().Be(second.TotalSavings);
+    }
+
+    [Fact]
     public void ProjectRejectsActiveOfferWithoutRegisteredEvaluator()
     {
         CheckoutTransaction transaction = new(
@@ -209,4 +317,82 @@ public sealed class CheckoutTransactionTests
             basket);
 
     private static readonly IReadOnlyList<IOfferEvaluator> Evaluators = [new QuantityForFixedPriceEvaluator()];
+
+    private static OfferApplicationPlan PlanWithFakeEvaluators(
+        BasketSnapshot basket,
+        IReadOnlyList<ProductPrice> prices,
+        IReadOnlyList<OfferDefinition> offers,
+        IReadOnlyList<IOfferEvaluator> evaluators) =>
+        new BestCustomerValueOfferApplicationPlanner().Plan(
+            new OfferPlanningContext(basket, prices.ToDictionary(price => price.Sku), offers, new OfferEvaluatorRegistry(evaluators)));
+
+    private static OfferDefinition FakeOffer(
+        string code,
+        Sku sku,
+        OfferType type,
+        OfferConfiguration configuration,
+        OfferScope scope = OfferScope.Line) =>
+        new(code, sku, type, OfferState.Active, configuration, scope);
+
+    private sealed record LineConfiguration : OfferConfiguration;
+
+    private sealed record GroupConfiguration : OfferConfiguration;
+
+    private sealed class FakeLineEvaluator : OfferEvaluator<LineConfiguration>
+    {
+        public override OfferType Type => OfferType.QuantityForFixedPrice;
+
+        public override IReadOnlyList<OfferApplication> Evaluate(
+            BasketSnapshot basket,
+            OfferDefinition<LineConfiguration> offer,
+            IReadOnlyDictionary<Sku, ProductPrice> prices)
+        {
+            return
+            [
+                new OfferApplication(
+                    offer.Code,
+                    offer.Sku,
+                    offer.Type,
+                    offer.Scope,
+                    offer.Priority,
+                    offer.CombinationRule,
+                    1,
+                    CheckoutMoney.FromPence(10m),
+                    [new OfferApplicationLineEffect(offer.Sku.Value, offer.Sku, 1, CheckoutMoney.FromPence(10m))]),
+            ];
+        }
+    }
+
+    private sealed class FakeGroupEvaluator : OfferEvaluator<GroupConfiguration>
+    {
+        public override OfferType Type => OfferType.None;
+
+        public override IReadOnlyList<OfferApplication> Evaluate(
+            BasketSnapshot basket,
+            OfferDefinition<GroupConfiguration> offer,
+            IReadOnlyDictionary<Sku, ProductPrice> prices)
+        {
+            return
+            [
+                new OfferApplication(
+                    offer.Code,
+                    offer.Sku,
+                    offer.Type,
+                    offer.Scope,
+                    offer.Priority,
+                    offer.CombinationRule,
+                    1,
+                    GroupSavingFor(offer.Code),
+                    [
+                        new OfferApplicationLineEffect("A", Sku.From("A"), 1, CheckoutMoney.FromPence(10m)),
+                        new OfferApplicationLineEffect("B", Sku.From("B"), 1, GroupSavingFor(offer.Code) - CheckoutMoney.FromPence(10m)),
+                    ]),
+            ];
+        }
+
+        private static Money GroupSavingFor(string code) =>
+            string.Equals(code, "GROUP-15", StringComparison.Ordinal)
+                ? CheckoutMoney.FromPence(15m)
+                : CheckoutMoney.FromPence(25m);
+    }
 }

@@ -123,11 +123,11 @@ public sealed class OfferDefinitionTests
     {
         public override OfferType Type => OfferType.QuantityForFixedPrice;
 
-        public override AppliedOffer? Evaluate(
+        public override IReadOnlyList<OfferApplication> Evaluate(
             BasketSnapshot basket,
             OfferDefinition<QuantityForFixedPriceConfiguration> offer,
             IReadOnlyDictionary<Sku, ProductPrice> prices) =>
-            null;
+            [];
     }
 
     private sealed class UntypedEvaluator : IOfferEvaluator
@@ -136,10 +136,10 @@ public sealed class OfferDefinitionTests
 
         public Type ConfigurationType => typeof(QuantityForFixedPriceConfiguration);
 
-        public AppliedOffer? Evaluate(
+        public IReadOnlyList<OfferApplication> Evaluate(
             BasketSnapshot basket,
             OfferDefinition offer,
-            IReadOnlyDictionary<Sku, ProductPrice> prices) => null;
+            IReadOnlyDictionary<Sku, ProductPrice> prices) => [];
     }
 
     private sealed record OtherConfiguration : OfferConfiguration;

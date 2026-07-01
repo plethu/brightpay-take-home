@@ -8,5 +8,5 @@ public sealed record CheckoutOfferItem(
     Sku Sku,
     OfferType Type,
     OfferState State,
-    int Quantity,
-    decimal FixedPriceAmount);
+    int ConfigurationVersion,
+    OfferConfiguration Configuration);

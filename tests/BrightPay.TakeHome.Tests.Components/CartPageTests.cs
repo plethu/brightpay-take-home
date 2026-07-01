@@ -39,6 +39,7 @@ public sealed class CartPageTests : BunitContext
             HttpContext = _httpContext,
         });
         Services.AddSingleton<ICheckoutBasketStore>(_basketStore);
+        Services.AddSingleton<IOfferLabelFormatter, CheckoutOfferLabelFormatter>();
         Services.AddScoped<CheckoutViewProjector>();
         Services.AddSingleton<ICheckoutCatalogService>(new FakeCheckoutCatalogService());
         Services.AddSingleton(CreateEmptyPersistentState());
@@ -71,6 +72,31 @@ public sealed class CartPageTests : BunitContext
     }
 
     [Fact]
+    public void AddItemsPaneRendersMultipleActiveOfferLabels()
+    {
+        IRenderedComponent<AddItemsPane> component =
+            Render<AddItemsPane>(parameters => parameters
+            .Add(pane => pane.Catalog,
+                [
+                    new CheckoutCatalogItemView("A", "Apple", "£0.50", ["3 for £1.30", "basket saver"]),
+                ]));
+
+        component.FindAll(".offer-badge").Select(badge => badge.TextContent.Trim())
+            .Should().Equal("3 for £1.30", "basket saver");
+    }
+
+    [Fact]
+    public void OfferBadgeListTruncatesAdditionalOffers()
+    {
+        IRenderedComponent<OfferBadgeList> component =
+            Render<OfferBadgeList>(parameters => parameters
+            .Add(list => list.OfferLabels, ["first", "second", "third", "fourth"]));
+
+        component.FindAll(".offer-badge").Select(badge => badge.TextContent.Trim())
+            .Should().Equal("first", "second", _localizer["CheckoutOfferMore", 2].Value);
+    }
+
+    [Fact]
     public void SingleItemReceiptLineUsesIconOnlyRemoveControl()
     {
         IRenderedComponent<QuantityStepper> component =
@@ -96,6 +122,38 @@ public sealed class CartPageTests : BunitContext
         AngleSharp.Dom.IElement badge = component.Find(".offer-badge");
         badge.QuerySelector("svg.offer-coupon[aria-hidden='true']").Should().NotBeNull();
         badge.TextContent.Should().Contain("3 for £1.30");
+    }
+
+    [Fact]
+    public void ReceiptRendersLineOfferLabels()
+    {
+        IRenderedComponent<Receipt> component =
+            Render<Receipt>(parameters => parameters
+            .Add(receipt => receipt.Lines,
+                [
+                    new CheckoutReceiptLineView("A", "Apple", 3, "£1.30", "£1.50", ["3 for £1.30"]),
+                ]));
+
+        component.Find(".sale-line .offer-badge").TextContent.Should().Contain("3 for £1.30");
+    }
+
+    [Fact]
+    public void ReceiptRendersBasketAdjustmentRows()
+    {
+        IRenderedComponent<Receipt> component =
+            Render<Receipt>(parameters => parameters
+            .Add(receipt => receipt.Lines,
+                [
+                    new CheckoutReceiptLineView("A", "Apple", 1, "£0.50", PreOfferTotal: null, OfferLabels: []),
+                ])
+            .Add(receipt => receipt.Adjustments,
+                [
+                    new CheckoutAdjustmentView("BASKET-5", "basket saver", "£0.05"),
+                ]));
+
+        AngleSharp.Dom.IElement adjustment = component.Find("[data-adjustment='BASKET-5']");
+        adjustment.TextContent.Should().Contain("basket saver");
+        adjustment.TextContent.Should().Contain("-£0.05");
     }
 
     [Fact]
@@ -188,8 +246,8 @@ public sealed class CartPageTests : BunitContext
         public Task<IReadOnlyList<CheckoutCatalogItem>> LoadCatalogItemsAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<CheckoutCatalogItem>>(
                 [
-                    new(Sku.From("A"), 50m, [new CheckoutOfferItem("A-3-FOR-130", Sku.From("A"), OfferType.QuantityForFixedPrice, OfferState.Active, 3, 130m)]),
-                    new(Sku.From("B"), 30m, [new CheckoutOfferItem("B-2-FOR-45", Sku.From("B"), OfferType.QuantityForFixedPrice, OfferState.Active, 2, 45m)]),
+                    new(Sku.From("A"), 50m, [new CheckoutOfferItem("A-3-FOR-130", Sku.From("A"), OfferType.QuantityForFixedPrice, OfferState.Active, 1, new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m)))]),
+                    new(Sku.From("B"), 30m, [new CheckoutOfferItem("B-2-FOR-45", Sku.From("B"), OfferType.QuantityForFixedPrice, OfferState.Active, 1, new QuantityForFixedPriceConfiguration(2, CheckoutMoney.FromPence(45m)))]),
                     new(Sku.From("C"), 20m, []),
                     new(Sku.From("D"), 15m, []),
                 ]);

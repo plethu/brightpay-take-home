@@ -3,6 +3,7 @@ using BrightPay.TakeHome.Web.Data.Checkout;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System.Text.Json;
 
 namespace BrightPay.TakeHome.Tests.Unit.Checkout;
 
@@ -28,7 +29,18 @@ public sealed class CheckoutCatalogModelTests
         products.Select(product => product["Sku"]).Should().Equal("A", "B", "C", "D");
         products.Select(product => product["UnitPriceAmount"]).Should().Equal(50m, 30m, 20m, 15m);
         offers.Select(offer => offer["Code"]).Should().Equal("A-3-FOR-130", "B-2-FOR-45");
-        offers.Select(offer => offer["Quantity"]).Should().Equal(3, 2);
-        offers.Select(offer => offer["FixedPriceAmount"]).Should().Equal(130m, 45m);
+        offers.Select(offer => offer["ConfigurationVersion"]).Should().Equal(1, 1);
+        offers.Select(ConfigurationQuantity).Should().Equal(3, 2);
+        offers.Select(ConfigurationMinorUnits).Should().Equal(130m, 45m);
     }
+
+    private static int ConfigurationQuantity(IDictionary<string, object?> offer) =>
+        JsonDocument.Parse((string)offer["ConfigurationJson"]!).RootElement.GetProperty("quantity").GetInt32();
+
+    private static decimal ConfigurationMinorUnits(IDictionary<string, object?> offer) =>
+        JsonDocument.Parse((string)offer["ConfigurationJson"]!)
+            .RootElement
+            .GetProperty("fixedPrice")
+            .GetProperty("minorUnits")
+            .GetDecimal();
 }

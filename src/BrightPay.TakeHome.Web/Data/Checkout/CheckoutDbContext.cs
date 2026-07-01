@@ -1,3 +1,5 @@
+using System.Text.Json;
+using BrightPay.TakeHome.Core.Checkout.Pricing;
 using Microsoft.EntityFrameworkCore;
 
 namespace BrightPay.TakeHome.Web.Data.Checkout;
@@ -32,7 +34,7 @@ public sealed class CheckoutDbContext(DbContextOptions<CheckoutDbContext> option
             entity.HasKey(offer => offer.Code);
             entity.Property(offer => offer.Code).HasMaxLength(64).IsUnicode(false);
             entity.Property(offer => offer.Sku).HasMaxLength(1).IsUnicode(false);
-            entity.Property(offer => offer.FixedPriceAmount).HasColumnType("decimal(18,2)");
+            entity.Property(offer => offer.ConfigurationJson).IsRequired();
             entity.HasIndex(offer => new { offer.Sku, offer.State });
             entity
                 .HasOne(offer => offer.Product)
@@ -46,8 +48,8 @@ public sealed class CheckoutDbContext(DbContextOptions<CheckoutDbContext> option
                     Sku = "A",
                     Type = 1,
                     State = 1,
-                    Quantity = 3,
-                    FixedPriceAmount = 130m,
+                    ConfigurationVersion = 1,
+                    ConfigurationJson = QuantityForFixedPriceConfigurationJson(3, 130m),
                 },
                 new CheckoutOfferEntity
                 {
@@ -55,9 +57,20 @@ public sealed class CheckoutDbContext(DbContextOptions<CheckoutDbContext> option
                     Sku = "B",
                     Type = 1,
                     State = 1,
-                    Quantity = 2,
-                    FixedPriceAmount = 45m,
+                    ConfigurationVersion = 1,
+                    ConfigurationJson = QuantityForFixedPriceConfigurationJson(2, 45m),
                 });
         });
     }
+
+    private static string QuantityForFixedPriceConfigurationJson(int quantity, decimal minorUnits) =>
+        JsonSerializer.Serialize(new
+        {
+            quantity,
+            fixedPrice = new
+            {
+                currency = CheckoutMoney.CurrencyCode,
+                minorUnits,
+            },
+        });
 }

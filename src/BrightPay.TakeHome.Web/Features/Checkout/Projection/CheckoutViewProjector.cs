@@ -10,10 +10,12 @@ namespace BrightPay.TakeHome.Web.Features.Checkout.Projection;
 public sealed class CheckoutViewProjector
 {
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly IOfferLabelFormatter _offerLabelFormatter;
 
-    public CheckoutViewProjector(IStringLocalizer<SharedResource> localizer)
+    public CheckoutViewProjector(IStringLocalizer<SharedResource> localizer, IOfferLabelFormatter offerLabelFormatter)
     {
         _localizer = localizer;
+        _offerLabelFormatter = offerLabelFormatter;
     }
 
     public CheckoutViewModel Project(
@@ -30,14 +32,16 @@ public sealed class CheckoutViewProjector
         IReadOnlyList<CheckoutCatalogItemView> itemViews =
         [
             .. catalogItems.Select(item =>
-            {
-                CheckoutOfferItem? offer = item.Offers.FirstOrDefault(offer => offer.State == OfferState.Active);
-                return new CheckoutCatalogItemView(
+                new CheckoutCatalogItemView(
                     item.Sku.Value,
                     SkuName(item.Sku.Value),
                     CheckoutMoney.Format(CheckoutMoney.FromPence(item.UnitPriceAmount)),
-                    offer is null ? null : FormatOfferLabel(offer));
-            }),
+                    [
+                        .. item.Offers
+                            .Where(offer => offer.State == OfferState.Active)
+                            .OrderBy(offer => offer.Code, StringComparer.Ordinal)
+                            .Select(FormatOfferLabel),
+                    ])),
         ];
 
         Dictionary<string, CheckoutOfferItem> offersByCode = catalogItems
@@ -52,9 +56,17 @@ public sealed class CheckoutViewProjector
                 line.Quantity,
                 CheckoutMoney.Format(line.Total),
                 line.Savings.Amount > 0m ? CheckoutMoney.Format(line.Subtotal) : null,
-                line.AppliedOffer is not null && offersByCode.TryGetValue(line.AppliedOffer.Code, out CheckoutOfferItem? offer)
+                OfferLabelsForLine(line, offersByCode))),
+        ];
+
+        IReadOnlyList<CheckoutAdjustmentView> adjustments =
+        [
+            .. pricedBasket.Adjustments.Select(adjustment => new CheckoutAdjustmentView(
+                adjustment.Code,
+                offersByCode.TryGetValue(adjustment.Code, out CheckoutOfferItem? offer)
                     ? FormatOfferLabel(offer)
-                    : null)),
+                    : adjustment.Code,
+                CheckoutMoney.Format(adjustment.Savings))),
         ];
 
         CheckoutTotalsView totals = new(
@@ -66,7 +78,7 @@ public sealed class CheckoutViewProjector
             pricedBasket.Savings.Amount > 0m,
             pricedBasket.LineCount == 0);
 
-        return new CheckoutViewModel(itemViews, lineViews, totals);
+        return new CheckoutViewModel(itemViews, lineViews, totals, adjustments);
     }
 
     public string ErrorMessage(CheckoutOperationError? error, string? skuText = null)
@@ -83,15 +95,12 @@ public sealed class CheckoutViewProjector
 
     private string SkuName(string sku) => _localizer[$"SkuName_{sku}"];
 
-    private string FormatOfferLabel(CheckoutOfferItem offer)
-    {
-        return offer.Type switch
-        {
-            OfferType.QuantityForFixedPrice =>
-                _localizer["CheckoutOffer_QuantityForFixedPrice", offer.Quantity, CheckoutMoney.Format(CheckoutMoney.FromPence(offer.FixedPriceAmount))],
-            OfferType.None =>
-                throw new InvalidOperationException("Offer type 'None' cannot be formatted for checkout."),
-            _ => throw new InvalidOperationException($"No checkout offer label is registered for offer type '{offer.Type}'."),
-        };
-    }
+    private string FormatOfferLabel(CheckoutOfferItem offer) => _offerLabelFormatter.Format(offer.Type, offer.Configuration);
+
+    private IReadOnlyList<string> OfferLabelsForLine(
+        PricedBasketLine line,
+        Dictionary<string, CheckoutOfferItem> offersByCode) =>
+        line.AppliedOffer is not null && offersByCode.TryGetValue(line.AppliedOffer.Code, out CheckoutOfferItem? offer)
+            ? [FormatOfferLabel(offer)]
+            : [];
 }

@@ -22,6 +22,13 @@
             {
                 <ReceiptLine @key="@($"{line.Sku}-leaving")" Line="@line" IsLeaving="true" OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />
             }
+            @foreach (CheckoutAdjustmentView adjustment in Adjustments)
+            {
+                <li class="sale-adjustment" data-adjustment="@adjustment.Code">
+                    <span>@adjustment.Label</span>
+                    <span class="line-price">-@adjustment.Savings</span>
+                </li>
+            }
         </ul>
     }
 </div>
@@ -32,6 +39,9 @@
 
     [Parameter]
     public IReadOnlyList<CheckoutReceiptLineView> LeavingLines { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<CheckoutAdjustmentView> Adjustments { get; set; } = [];
 
     // Lines (keyed by SKU) whose offer just stopped applying, so the badge can collapse out.
     [Parameter]

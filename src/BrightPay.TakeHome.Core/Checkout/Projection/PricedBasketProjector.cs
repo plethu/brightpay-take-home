@@ -12,11 +12,13 @@ public sealed class PricedBasketProjector
     private readonly Dictionary<Sku, ProductPrice> _prices;
     private readonly IReadOnlyList<OfferDefinition> _offers;
     private readonly OfferEvaluatorRegistry _offerEvaluators;
+    private readonly IOfferApplicationPlanner _offerPlanner;
 
     public PricedBasketProjector(
         IEnumerable<ProductPrice> prices,
         IEnumerable<OfferDefinition> offers,
-        IEnumerable<IOfferEvaluator> evaluators)
+        IEnumerable<IOfferEvaluator> evaluators,
+        IOfferApplicationPlanner? offerPlanner = null)
     {
         ArgumentNullException.ThrowIfNull(prices);
         ArgumentNullException.ThrowIfNull(offers);
@@ -31,6 +33,7 @@ public sealed class PricedBasketProjector
                 .ThenBy(offer => offer.Code, StringComparer.Ordinal),
         ];
         _offerEvaluators = new OfferEvaluatorRegistry(evaluators);
+        _offerPlanner = offerPlanner ?? new BestCustomerValueOfferApplicationPlanner();
     }
 
     public PricedBasket Project(BasketSnapshot basket)
@@ -39,8 +42,7 @@ public sealed class PricedBasketProjector
 
         List<PricedBasketLine> lines = [];
         Money subtotal = CheckoutMoney.Zero;
-        Money savings = CheckoutMoney.Zero;
-        Money total = CheckoutMoney.Zero;
+        OfferApplicationPlan offerPlan = _offerPlanner.Plan(new OfferPlanningContext(basket, _prices, _offers, _offerEvaluators));
 
         foreach (BasketLine line in basket.Lines)
         {
@@ -52,36 +54,26 @@ public sealed class PricedBasketProjector
             }
 
             Money lineSubtotal = price.UnitPrice * line.Quantity;
-            AppliedOfferSummary? appliedOffer = EvaluateBestOffer(basket, line.Sku);
-            Money lineSavings = appliedOffer?.Savings ?? CheckoutMoney.Zero;
+            string lineReference = LineReference(line);
+            Money lineSavings = offerPlan.SavingsForLine(lineReference);
+            AppliedOfferSummary? appliedOffer = offerPlan.ApplicationsForLine(lineReference)
+                .Select(application => new AppliedOfferSummary(application.Code, application.Sku, application.Applications, application.Saving))
+                .FirstOrDefault();
 
             Money lineTotal = lineSubtotal - lineSavings;
             lines.Add(new PricedBasketLine(line.Sku, line.Quantity, price.UnitPrice, lineSubtotal, lineSavings, lineTotal, appliedOffer));
             subtotal += lineSubtotal;
-            savings += lineSavings;
-            total += lineTotal;
         }
 
-        return new PricedBasket(lines, subtotal, savings, total);
+        IReadOnlyList<PricedBasketAdjustment> adjustments =
+        [
+            .. offerPlan.BasketApplications.Select(application => new PricedBasketAdjustment(application.Code, application.Saving)),
+        ];
+        Money savings = offerPlan.TotalSavings;
+        Money total = subtotal - savings;
+
+        return new PricedBasket(lines, subtotal, savings, total, adjustments);
     }
 
-    private AppliedOfferSummary? EvaluateBestOffer(BasketSnapshot basket, Sku sku)
-    {
-        AppliedOffer? bestOffer = null;
-
-        foreach (OfferDefinition offer in _offers.Where(offer => offer.Sku == sku))
-        {
-            IOfferEvaluator evaluator = _offerEvaluators.Resolve(offer)
-                ?? throw new InvalidOperationException($"No evaluator is registered for active offer '{offer.Code}' ({offer.Type}).");
-            AppliedOffer? appliedOffer = evaluator.Evaluate(basket, offer, _prices);
-            if (appliedOffer is not null && (bestOffer is null || appliedOffer.Saving > bestOffer.Saving))
-            {
-                bestOffer = appliedOffer;
-            }
-        }
-
-        return bestOffer is null
-            ? null
-            : new AppliedOfferSummary(bestOffer.Code, bestOffer.Sku, bestOffer.Applications, bestOffer.Saving);
-    }
+    private static string LineReference(BasketLine line) => line.Sku.Value;
 }

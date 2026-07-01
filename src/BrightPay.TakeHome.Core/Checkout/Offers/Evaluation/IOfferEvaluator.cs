@@ -13,7 +13,7 @@ public interface IOfferEvaluator
 
     // Prices are supplied per evaluation rather than captured in the evaluator, so evaluators are
     // stateless and can be registered once in DI (the composition root owns the evaluator set).
-    AppliedOffer? Evaluate(
+    IReadOnlyList<OfferApplication> Evaluate(
         BasketSnapshot basket,
         OfferDefinition offer,
         IReadOnlyDictionary<Sku, ProductPrice> prices);
@@ -22,7 +22,7 @@ public interface IOfferEvaluator
 public interface IOfferEvaluator<TConfiguration> : IOfferEvaluator
     where TConfiguration : OfferConfiguration
 {
-    AppliedOffer? Evaluate(
+    IReadOnlyList<OfferApplication> Evaluate(
         BasketSnapshot basket,
         OfferDefinition<TConfiguration> offer,
         IReadOnlyDictionary<Sku, ProductPrice> prices);

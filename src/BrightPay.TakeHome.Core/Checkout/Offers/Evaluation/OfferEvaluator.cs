@@ -12,7 +12,7 @@ public abstract class OfferEvaluator<TConfiguration> : IOfferEvaluator<TConfigur
 
     public Type ConfigurationType => typeof(TConfiguration);
 
-    public AppliedOffer? Evaluate(
+    public IReadOnlyList<OfferApplication> Evaluate(
         BasketSnapshot basket,
         OfferDefinition offer,
         IReadOnlyDictionary<Sku, ProductPrice> prices)
@@ -26,7 +26,7 @@ public abstract class OfferEvaluator<TConfiguration> : IOfferEvaluator<TConfigur
                 nameof(offer));
     }
 
-    public abstract AppliedOffer? Evaluate(
+    public abstract IReadOnlyList<OfferApplication> Evaluate(
         BasketSnapshot basket,
         OfferDefinition<TConfiguration> offer,
         IReadOnlyDictionary<Sku, ProductPrice> prices);

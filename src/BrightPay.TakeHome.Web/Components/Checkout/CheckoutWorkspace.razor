@@ -36,6 +36,7 @@
                           OnManualSkuChanged="@ClearErrorAsync" />
             <SalePane Totals="@_model.Totals"
                       Lines="@_model.Lines"
+                      Adjustments="@_model.Adjustments"
                       LeavingLines="@([.._leavingLines.Values])"
                       LeavingOffers="@_leavingOffers"
                       OnIncrement="@IncrementAsync"

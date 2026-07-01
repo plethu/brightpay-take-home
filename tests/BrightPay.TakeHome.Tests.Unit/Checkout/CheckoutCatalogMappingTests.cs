@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AwesomeAssertions;
 using BrightPay.TakeHome.Core.Checkout.Basket;
 using BrightPay.TakeHome.Core.Checkout.Identifiers;
@@ -20,8 +21,8 @@ public sealed class CheckoutCatalogMappingTests
             Sku = "A",
             Type = (int)OfferType.QuantityForFixedPrice,
             State = (int)OfferState.Active,
-            Quantity = 3,
-            FixedPriceAmount = 130m,
+            ConfigurationVersion = 1,
+            ConfigurationJson = QuantityOfferConfigurationJson(3, CheckoutMoney.CurrencyCode, 130m),
         });
 
         offer.Configuration.Should().BeOfType<QuantityForFixedPriceConfiguration>()
@@ -30,6 +31,41 @@ public sealed class CheckoutCatalogMappingTests
                 Quantity = 3,
                 FixedPrice = CheckoutMoney.FromPence(130m),
             });
+    }
+
+    [Fact]
+    public void MapperRejectsUnknownOfferType()
+    {
+        Action action = () => CheckoutCatalogMapper.ToOfferDefinition(OfferEntity(type: 999));
+
+        action.Should().Throw<ArgumentOutOfRangeException>()
+            .WithMessage("*Unknown offer type*");
+    }
+
+    [Fact]
+    public void MapperRejectsUnknownConfigurationVersion()
+    {
+        Action action = () => CheckoutCatalogMapper.ToOfferDefinition(OfferEntity(configurationVersion: 2));
+
+        action.Should().Throw<InvalidOperationException>()
+            .WithMessage("*Unsupported QuantityForFixedPrice configuration version '2'*");
+    }
+
+    [Fact]
+    public void MapperRejectsMalformedConfigurationJson()
+    {
+        Action action = () => CheckoutCatalogMapper.ToOfferDefinition(OfferEntity(configurationJson: "{"));
+
+        action.Should().Throw<JsonException>();
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidConfigurationJson))]
+    public void MapperRejectsSemanticallyInvalidConfigurationJson(string configurationJson)
+    {
+        Action action = () => CheckoutCatalogMapper.ToOfferDefinition(OfferEntity(configurationJson: configurationJson));
+
+        action.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -43,7 +79,7 @@ public sealed class CheckoutCatalogMappingTests
                     Sku.From("A"),
                     OfferType.QuantityForFixedPrice,
                     OfferState.Active,
-                    new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m))),
+            new QuantityForFixedPriceConfiguration(3, CheckoutMoney.FromPence(130m))),
             ],
             [new QuantityForFixedPriceEvaluator()]);
 
@@ -53,4 +89,38 @@ public sealed class CheckoutCatalogMappingTests
 
         catalog.StartTransaction(basket).Total.Amount.Should().Be(130m);
     }
+
+    private static CheckoutOfferEntity OfferEntity(
+        int type = (int)OfferType.QuantityForFixedPrice,
+        int configurationVersion = 1,
+        string configurationJson = "") =>
+        new()
+        {
+            Code = "A-3-FOR-130",
+            Sku = "A",
+            Type = type,
+            State = (int)OfferState.Active,
+            ConfigurationVersion = configurationVersion,
+            ConfigurationJson = string.IsNullOrEmpty(configurationJson)
+                ? QuantityOfferConfigurationJson(3, CheckoutMoney.CurrencyCode, 130m)
+                : configurationJson,
+        };
+
+    public static TheoryData<string> InvalidConfigurationJson =>
+        [
+            QuantityOfferConfigurationJson(0, CheckoutMoney.CurrencyCode, 130m),
+            QuantityOfferConfigurationJson(3, CheckoutMoney.CurrencyCode, -1m),
+            QuantityOfferConfigurationJson(3, "USD", 130m),
+        ];
+
+    private static string QuantityOfferConfigurationJson(int quantity, string currency, decimal minorUnits) =>
+        JsonSerializer.Serialize(new
+        {
+            quantity,
+            fixedPrice = new
+            {
+                currency,
+                minorUnits,
+            },
+        });
 }

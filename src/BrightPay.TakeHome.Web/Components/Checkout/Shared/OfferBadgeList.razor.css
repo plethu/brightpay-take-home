@@ -1,0 +1,19 @@
+.offer-list {
+    container-type: inline-size;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    max-inline-size: 100%;
+    vertical-align: middle;
+}
+
+.offer-badge-more {
+    border-style: dashed;
+    color: var(--color-text-muted);
+}
+
+@container (width <= 16rem) {
+    .offer-list {
+        gap: calc(var(--space-xs) / 2);
+    }
+}

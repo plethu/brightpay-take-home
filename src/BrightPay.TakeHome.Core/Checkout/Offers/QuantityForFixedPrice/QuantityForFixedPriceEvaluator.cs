@@ -11,7 +11,7 @@ public sealed class QuantityForFixedPriceEvaluator : OfferEvaluator<QuantityForF
 {
     public override OfferType Type => OfferType.QuantityForFixedPrice;
 
-    public override AppliedOffer? Evaluate(
+    public override IReadOnlyList<OfferApplication> Evaluate(
         BasketSnapshot basket,
         OfferDefinition<QuantityForFixedPriceConfiguration> offer,
         IReadOnlyDictionary<Sku, ProductPrice> prices)
@@ -22,19 +22,39 @@ public sealed class QuantityForFixedPriceEvaluator : OfferEvaluator<QuantityForF
 
         if (!offer.IsActive || !prices.TryGetValue(offer.Sku, out ProductPrice? price))
         {
-            return null;
+            return [];
         }
 
         int quantity = basket.QuantityFor(offer.Sku);
         int applications = quantity / offer.Configuration.Quantity;
         if (applications == 0)
         {
-            return null;
+            return [];
         }
 
         Money undiscounted = price.UnitPrice * offer.Configuration.Quantity * applications;
         Money discounted = offer.Configuration.FixedPrice * applications;
 
-        return new AppliedOffer(offer.Code, offer.Sku, applications, undiscounted - discounted);
+        Money saving = undiscounted - discounted;
+
+        return
+        [
+            new OfferApplication(
+                offer.Code,
+                offer.Sku,
+                offer.Type,
+                offer.Scope,
+                offer.Priority,
+                offer.CombinationRule,
+                applications,
+                saving,
+                [
+                    new OfferApplicationLineEffect(
+                        offer.Sku.Value,
+                        offer.Sku,
+                        offer.Configuration.Quantity * applications,
+                        saving),
+                ]),
+        ];
     }
 }

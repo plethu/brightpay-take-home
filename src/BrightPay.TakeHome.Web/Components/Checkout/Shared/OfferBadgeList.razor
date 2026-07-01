@@ -1,0 +1,30 @@
+@using BrightPay.TakeHome.Web.Features.Checkout.Projection
+@inject IStringLocalizer<SharedResource> Localizer
+
+@if (OfferLabels.Count > 0)
+{
+    <span class="offer-list" data-offer-count="@OfferLabels.Count">
+        @foreach (string offerLabel in VisibleOfferLabels)
+        {
+            <OfferBadge Label="@offerLabel" />
+        }
+        @if (HiddenOfferCount > 0)
+        {
+            <span class="offer-badge offer-badge-more">@Localizer["CheckoutOfferMore", HiddenOfferCount]</span>
+        }
+    </span>
+}
+
+@code {
+    [Parameter]
+    public IReadOnlyList<string> OfferLabels { get; set; } = [];
+
+    [Parameter]
+    public int MaxVisible { get; set; } = 2;
+
+    private int VisibleCount => Math.Clamp(MaxVisible, 0, OfferLabels.Count);
+
+    private int HiddenOfferCount => OfferLabels.Count - VisibleCount;
+
+    private IReadOnlyList<string> VisibleOfferLabels => [.. OfferLabels.Take(VisibleCount)];
+}

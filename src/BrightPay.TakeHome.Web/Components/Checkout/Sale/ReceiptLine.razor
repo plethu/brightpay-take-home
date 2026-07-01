@@ -6,13 +6,17 @@
         @* Conditionally rendered, so the node is created exactly when the offer becomes eligible and
            plays offer-in. When the offer drops, LeavingOffer carries the previous label so a ghost can
            collapse out (offer-exit) before the page clears it — the no-JS twin of animateOfferOut. *@
-        @if (Line.OfferLabel is not null)
+        @if (Line.OfferLabels.Count > 0)
         {
-            <p class="line-meta"><OfferBadge Label="@Line.OfferLabel" /></p>
+            <p class="line-meta">
+                <OfferBadgeList OfferLabels="@Line.OfferLabels" />
+            </p>
         }
-        else if (LeavingOffer?.OfferLabel is { } leavingLabel)
+        else if (LeavingOffer?.OfferLabels.Count > 0)
         {
-            <p class="line-meta offer-exit-ghost" aria-hidden="true"><OfferBadge Label="@leavingLabel" /></p>
+            <p class="line-meta offer-exit-ghost" aria-hidden="true">
+                <OfferBadgeList OfferLabels="@LeavingOffer.OfferLabels" />
+            </p>
         }
     </div>
     <QuantityStepper Sku="@Line.Sku" Name="@Line.Name" Quantity="@Line.Quantity" OnIncrement="@OnIncrement" OnDecrement="@OnDecrement" />

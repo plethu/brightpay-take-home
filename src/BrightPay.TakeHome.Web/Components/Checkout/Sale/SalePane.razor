@@ -13,6 +13,7 @@
     </div>
     <Receipt Lines="@Lines"
              LeavingLines="@LeavingLines"
+             Adjustments="@Adjustments"
              LeavingOffers="@LeavingOffers"
              IsEmpty="@(Totals.IsEmpty && LeavingLines.Count == 0)"
              OnIncrement="@OnIncrement"
@@ -29,6 +30,9 @@
 
     [Parameter]
     public IReadOnlyList<CheckoutReceiptLineView> LeavingLines { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<CheckoutAdjustmentView> Adjustments { get; set; } = [];
 
     [Parameter]
     public IReadOnlyDictionary<string, CheckoutReceiptLineView> LeavingOffers { get; set; } =

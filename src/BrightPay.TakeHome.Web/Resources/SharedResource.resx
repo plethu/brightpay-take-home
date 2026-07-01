@@ -121,6 +121,9 @@
   <data name="CheckoutOffer_QuantityForFixedPrice" xml:space="preserve">
     <value>{0} for {1}</value>
   </data>
+  <data name="CheckoutOfferMore" xml:space="preserve">
+    <value>+ {0} more</value>
+  </data>
   <data name="CheckoutSubtotal" xml:space="preserve">
     <value>Subtotal</value>
   </data>

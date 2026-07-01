@@ -36,6 +36,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ICheckoutBasketStore, MemoryCacheCheckoutBasketStore>();
 builder.Services.AddScoped<CheckoutViewProjector>();
+builder.Services.AddSingleton<IOfferLabelFormatter, CheckoutOfferLabelFormatter>();
 
 // Composition root for the offer engine: register each evaluator once and the projector resolves
 // them from DI. A new offer type ships by adding its evaluator here (plus its config + label),

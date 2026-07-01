@@ -23,3 +23,12 @@
     list-style: none;
     padding: 0;
 }
+
+.sale-adjustment {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-block: var(--space-sm);
+    border-block-start: var(--border-width) solid var(--color-border);
+    color: var(--color-text-muted);
+}
