@@ -35,3 +35,12 @@ The backend keeps the suggested checkout shape, but does not implement the
 sample `ICheckout` literally. The domain uses a typed `Sku`, NodaMoney `Money`
 values, explicit operation results for expected validation failures, and a
 checkout transaction constructed from the active pricing rules.
+
+## Post-submission amendments
+
+After submitting and sleeping on it for a weekend, I did some
+maintainability-focused refactors that should improve future extensibility and
+shore up some of the leakier abstractions left surrounding offers. Reviewers who
+have already committed time to assessing the project are free to disregard and
+instead keep [`43b7f81`](https://github.com/plethu/brightpay-take-home/commit/43b7f81)
+as the submitted copy of the work.
